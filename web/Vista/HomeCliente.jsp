@@ -18,7 +18,6 @@
   List<Event> recs = new EventDAO().listFeatured(3);
   DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-  // --- KPIs del include (con fallback)
   Object _kTot = request.getAttribute("kpi_total");
   Object _kUp  = request.getAttribute("kpi_upcoming");
   Object _kRef = request.getAttribute("kpi_refunded");
@@ -36,34 +35,40 @@
   <%@ include file="../Includes/head_base.jspf" %>
   <title>Mi panel</title>
   <style>
-    /* Tarjetas y micro-interacciones */
-    .cta{
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
-      border-radius: 18px; padding: 18px;
-      box-shadow: 0 10px 40px rgba(0,0,0,.45);
-      transition: transform .15s ease, box-shadow .22s ease, background .22s ease;
-      border:1px solid rgba(255,255,255,.10);
-    }
-    .cta:hover{ transform: translateY(-2px); box-shadow: 0 16px 50px rgba(0,0,0,.5); }
-    .btn-ghost{
-      border-radius: 12px; padding: 10px 14px; font-weight: 700;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.04);
-      transition: border-color .2s, transform .12s, box-shadow .22s, background .2s;
-    }
-    .btn-ghost:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.3); }
-    .ev{ transition: transform .15s ease, box-shadow .2s ease; }
-    .ev:hover{ transform: translateY(-2px); box-shadow: 0 16px 50px rgba(0,0,0,.5); }
-    /* KPIs */
-    .kpi{border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.04); border-radius:16px; padding:16px}
-    .kpi .n{font-size:1.75rem; font-weight:900; letter-spacing:-.02em}
-    /* Inputs (PQRS) */
-    .input, .textarea, .select{
-      width:100%; padding:.85rem 1rem; border-radius:12px; background:transparent;
-      border:1px solid rgba(255,255,255,.15); color:#fff; outline:none; appearance:none;
-      transition:border-color .15s, box-shadow .15s;
-    }
-    .input:focus, .textarea:focus, .select:focus{ border-color:rgba(0,209,178,.6); box-shadow:0 0 0 3px rgba(0,209,178,.16) inset }
+    /* ===== Tarjetas generales / botones ===== */
+    .cta{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.04));border-radius:18px;padding:18px;border:1px solid rgba(255,255,255,.10);box-shadow:0 10px 40px rgba(0,0,0,.45);transition:transform .15s, box-shadow .22s}
+    .cta:hover{transform:translateY(-2px);box-shadow:0 16px 50px rgba(0,0,0,.5)}
+    .btn-ghost{border-radius:12px;padding:10px 14px;font-weight:700;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);transition:border-color .2s, transform .12s}
+    .btn-ghost:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.3)}
+    .ev{transition:transform .15s, box-shadow .2s}.ev:hover{transform:translateY(-2px);box-shadow:0 16px 50px rgba(0,0,0,.5)}
+    /* ===== KPIs ===== */
+    .kpi{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);border-radius:16px;padding:16px}
+    .kpi .n{font-size:1.75rem;font-weight:900;letter-spacing:-.02em}
+    /* ====== HELP & PQRS Polished ====== */
+    .panel{border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03));border-radius:18px;overflow:hidden}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px;border-bottom:1px solid rgba(255,255,255,.10)}
+    .panel-title{font-weight:900;font-size:1.15rem;letter-spacing:-.01em}
+    .panel-sub{color:rgba(255,255,255,.65);font-size:.9rem}
+    .chip{display:inline-flex;align-items:center;gap:.45rem;padding:.35rem .7rem;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);font-weight:700;font-size:.8rem}
+    /* Contacts */
+    .contact{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.05);transition:transform .12s, border-color .2s}
+    .contact:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.22)}
+    .contact .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:rgba(108,92,231,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+    /* Steps */
+    .steps-v{position:relative;border-left:1px dashed rgba(255,255,255,.18);padding-left:14px}
+    .steps-v .dot{position:absolute;left:-8px;top:6px;width:12px;height:12px;border-radius:999px;background:rgba(0,209,178,.6);box-shadow:0 0 0 3px rgba(0,209,178,.12)}
+    /* FAQ */
+    .faq details{border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.05);overflow:hidden}
+    .faq summary{cursor:pointer;font-weight:800;padding:12px 14px}
+    .faq .ans{padding:12px 14px;color:rgba(255,255,255,.78);border-top:1px solid rgba(255,255,255,.08)}
+    details[open] summary{background:rgba(255,255,255,.06)}
+    /* Form */
+    .field label{display:block;margin-bottom:6px;color:rgba(255,255,255,.8);font-size:.92rem}
+    .inputx,.textareax,.selectx,.filex{width:100%;padding:.9rem 1rem;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.14);color:#fff;outline:none;transition:border-color .16s, box-shadow .16s}
+    .inputx:focus,.textareax:focus,.selectx:focus,.filex:focus{border-color:rgba(0,209,178,.6);box-shadow:0 0 0 3px rgba(0,209,178,.16) inset}
+    .textareax{min-height:140px;resize:vertical}
+    .btn-cta{position:relative}
+    .btn-cta::after{content:"";position:absolute;inset:auto -10px -10px -10px;height:36px;filter:blur(18px);background:radial-gradient(closest-side,rgba(108,92,231,.35),transparent 70%);opacity:.55;pointer-events:none}
   </style>
 </head>
 <body class="text-white font-sans">
@@ -100,30 +105,18 @@
     <!-- Quick cards -->
     <section class="grid md:grid-cols-3 gap-4 mb-10">
       <a class="cta block" href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">🎉</div>
-          <div>
-            <div class="font-extrabold">Próximos eventos</div>
-            <div class="text-white/70 text-sm">Recomendados para ti</div>
-          </div>
+        <div class="flex items-center gap-3"><div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">🎉</div>
+          <div><div class="font-extrabold">Próximos eventos</div><div class="text-white/70 text-sm">Recomendados para ti</div></div>
         </div>
       </a>
       <a class="cta block" href="<%= request.getContextPath() %>/Vista/MisTickets.jsp">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">🎫</div>
-          <div>
-            <div class="font-extrabold">Mis tickets</div>
-            <div class="text-white/70 text-sm">Descarga o transfiere</div>
-          </div>
+        <div class="flex items-center gap-3"><div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">🎫</div>
+          <div><div class="font-extrabold">Mis tickets</div><div class="text-white/70 text-sm">Descarga o transfiere</div></div>
         </div>
       </a>
       <a class="cta block" href="<%= request.getContextPath() %>/Vista/HistorialCompras.jsp">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">📜</div>
-          <div>
-            <div class="font-extrabold">Historial</div>
-            <div class="text-white/70 text-sm">Compras pasadas</div>
-          </div>
+        <div class="flex items-center gap-3"><div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">📜</div>
+          <div><div class="font-extrabold">Historial</div><div class="text-white/70 text-sm">Compras pasadas</div></div>
         </div>
       </a>
     </section>
@@ -172,92 +165,81 @@
       </div>
     </section>
 
-    <!-- Centro de ayuda + PQRS (rediseño) -->
+    <!-- ===== Centro de ayuda + PQRS ===== -->
     <section class="grid xl:grid-cols-2 gap-6">
-      <!-- Ayuda -->
-      <div class="glass ring rounded-2xl p-0 overflow-hidden">
-        <div class="px-6 py-5 border-b border-white/10 flex items-center justify-between">
+      <!-- Centro de ayuda -->
+      <div class="panel">
+        <div class="panel-head">
           <div>
-            <h3 class="text-xl font-extrabold">Centro de ayuda</h3>
-            <p class="text-white/60 text-sm">Guías rápidas y soporte</p>
+            <div class="panel-title">Centro de ayuda</div>
+            <div class="panel-sub">Guías rápidas y soporte</div>
           </div>
-          <div class="flex gap-2">
-            <a href="<%= request.getContextPath() %>/Vista/MisTickets.jsp" class="btn-ghost">Ver mis tickets</a>
-            <a href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp" class="btn-ghost">Explorar</a>
+          <div class="hidden md:flex gap-2">
+            <a href="<%= request.getContextPath() %>/Vista/MisTickets.jsp" class="chip">Ver mis tickets</a>
+            <a href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp" class="chip">Explorar</a>
           </div>
         </div>
 
         <div class="p-6 grid md:grid-cols-2 gap-5">
-          <div class="space-y-4">
-            <div class="cta"><div class="flex items-center gap-3">
-              <div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">💬</div>
-              <div><div class="font-bold">Chat de soporte</div><div class="text-white/60 text-sm">Tiempo de respuesta &lt; 2h</div></div>
-            </div></div>
-            <div class="cta"><div class="flex items-center gap-3">
-              <div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">📧</div>
-              <div><div class="font-bold">Email</div><div class="text-white/60 text-sm">soporte@livepassbuga.com</div></div>
-            </div></div>
-            <div class="cta"><div class="flex items-center gap-3">
-              <div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">📞</div>
-              <div><div class="font-bold">Línea prioritaria</div><div class="text-white/60 text-sm">L–V 8:00–18:00</div></div>
-            </div></div>
+          <!-- Contactos -->
+          <div class="space-y-3">
+            <div class="contact"><div class="ico">💬</div><div><div class="font-extrabold">Chat de soporte</div><div class="text-white/60 text-sm">Tiempo de respuesta &lt; 2h</div></div></div>
+            <div class="contact"><div class="ico">📧</div><div><div class="font-extrabold">Email</div><div class="text-white/60 text-sm">soporte@livepassbuga.com</div></div></div>
+            <div class="contact"><div class="ico">📞</div><div><div class="font-extrabold">Línea prioritaria</div><div class="text-white/60 text-sm">L–V 8:00–18:00</div></div></div>
           </div>
 
-          <div class="cta">
-            <div class="font-bold mb-3">¿Problema con una compra?</div>
-            <ol class="relative border-l border-white/15 pl-4 space-y-4 text-white/80">
-              <li><div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-primary/60"></div>
-                  Abre <b>Mis tickets</b> y verifica tu compra / referencia.</li>
-              <li><div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-primary/60"></div>
-                  Revisa el correo de confirmación (SPAM/Promociones).</li>
-              <li><div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-primary/60"></div>
-                  Si sigue el problema, envía una <b>PQRS</b> con la referencia y detalle.</li>
-            </ol>
+          <!-- Pasos + actividad -->
+          <div class="space-y-4">
+            <div class="contact" style="display:block">
+              <div class="font-extrabold mb-2">¿Problema con una compra?</div>
+              <div class="steps-v space-y-3">
+                <div class="relative pl-2"><span class="dot"></span> Abre <b>Mis tickets</b> y verifica compra/ref.</div>
+                <div class="relative pl-2"><span class="dot"></span> Revisa correo de confirmación (SPAM/Promociones).</div>
+                <div class="relative pl-2"><span class="dot"></span> Si continúa, envía una <b>PQRS</b> con referencia y detalle.</div>
+              </div>
+            </div>
 
             <% if (recent != null && !recent.isEmpty()) { %>
-              <div class="h-px bg-white/10 my-4"></div>
-              <div class="font-bold mb-2">Actividad reciente</div>
-              <ul class="space-y-1 text-white/70">
-                <% for (String item : recent) { %><li>• <%= item %></li><% } %>
-              </ul>
+              <div class="contact" style="display:block">
+                <div class="font-extrabold mb-2">Actividad reciente</div>
+                <ul class="space-y-1 text-white/75">
+                  <% for (String item : recent) { %><li>• <%= item %></li><% } %>
+                </ul>
+              </div>
             <% } %>
           </div>
         </div>
 
-        <div class="px-6 pb-6">
-          <div class="grid md:grid-cols-3 gap-4">
-            <details class="cta"><summary class="cursor-pointer font-bold">No llegó el correo</summary>
-              <div class="text-white/70 mt-2">Busca en SPAM/Promociones. Valídalo también en <b>Mis tickets</b>.</div>
-            </details>
-            <details class="cta"><summary class="cursor-pointer font-bold">Reembolsos</summary>
-              <div class="text-white/70 mt-2">Dependen de la política del organizador. Envíanos una <b>PQRS</b>.</div>
-            </details>
-            <details class="cta"><summary class="cursor-pointer font-bold">Transferencias</summary>
-              <div class="text-white/70 mt-2">Se hacen desde <b>Mis tickets → Transferir</b>.</div>
-            </details>
+        <div class="p-6 pt-0">
+          <div class="faq grid md:grid-cols-3 gap-4">
+            <details><summary>No llegó el correo</summary><div class="ans">Busca en SPAM/Promociones. Valídalo también en <b>Mis tickets</b>.</div></details>
+            <details><summary>Reembolsos</summary><div class="ans">Dependen de la política del organizador. Envíanos una <b>PQRS</b>.</div></details>
+            <details><summary>Transferencias</summary><div class="ans">Se hacen desde <b>Mis tickets → Transferir</b>.</div></details>
           </div>
         </div>
       </div>
 
       <!-- PQRS -->
-      <div class="glass ring rounded-2xl p-0 overflow-hidden">
-        <div class="px-6 py-5 border-b border-white/10 flex items-center justify-between">
+      <div class="panel">
+        <div class="panel-head">
           <div>
-            <h3 class="text-xl font-extrabold">Crear PQRS</h3>
-            <p class="text-white/60 text-sm">Respuesta promedio &lt; 24h</p>
+            <div class="panel-title">Crear PQRS</div>
+            <div class="panel-sub">Respuesta promedio &lt; 24h</div>
           </div>
-          <div class="hidden md:flex items-center gap-3 text-white/60 text-sm">
-            <span class="px-2 py-1 rounded-lg border border-white/15">Ref de pago ayuda</span>
-            <span class="px-2 py-1 rounded-lg border border-white/15">Adjunta evidencia</span>
+          <div class="hidden md:flex gap-2">
+            <span class="chip">Ref de pago ayuda</span>
+            <span class="chip">Adjunta evidencia</span>
           </div>
         </div>
 
-        <form action="<%= request.getContextPath() %>/Control/ct_pqrs.jsp" method="post" class="p-6 grid md:grid-cols-2 gap-4" id="pqrsForm" novalidate>
+        <form action="<%= request.getContextPath() %>/Control/ct_pqrs.jsp"
+              method="post" enctype="multipart/form-data"
+              class="p-6 grid md:grid-cols-2 gap-4" id="pqrsForm" novalidate>
           <input type="hidden" name="userId" value="<%= uid %>">
 
-          <div>
-            <label class="block text-sm text-white/80 mb-1">Tipo</label>
-            <select name="type" class="select" required>
+          <div class="field">
+            <label>Tipo</label>
+            <select name="type" class="selectx" required>
               <option value="">— Seleccionar —</option>
               <option value="PETICION">Petición</option>
               <option value="QUEJA">Queja</option>
@@ -266,20 +248,24 @@
             </select>
           </div>
 
-          <div>
-            <label class="block text-sm text-white/80 mb-1">Referencia de pago (opcional)</label>
-            <input class="input" name="payment_ref" placeholder="Ej: SIM-12345-678">
+          <div class="field">
+            <label>Referencia de pago (opcional)</label>
+            <input class="inputx" name="payment_ref" placeholder="Ej: SIM-12345-678">
           </div>
 
-          <div class="md:col-span-2">
-            <label class="block text-sm text-white/80 mb-1">Asunto</label>
-            <input class="input" name="subject" required placeholder="Breve resumen del caso">
+          <div class="field md:col-span-2">
+            <label>Asunto</label>
+            <input class="inputx" name="subject" required placeholder="Breve resumen del caso">
           </div>
 
-          <div class="md:col-span-2">
-            <label class="block text-sm text-white/80 mb-1">Mensaje</label>
-            <textarea class="textarea" name="message" rows="5" required placeholder="Describe tu solicitud con el mayor detalle posible"></textarea>
-            <p class="text-white/60 text-xs mt-2">Al enviar, aceptas ser contactado por nuestro equipo para resolver tu caso.</p>
+          <div class="field md:col-span-2">
+            <label>Mensaje</label>
+            <textarea class="textareax" name="message" required placeholder="Describe tu solicitud con el mayor detalle posible"></textarea>
+          </div>
+
+          <div class="field">
+            <label>Adjunto (opcional)</label>
+            <input type="file" class="filex" name="attachment" accept=".pdf,.jpg,.jpeg,.png">
           </div>
 
           <div class="md:col-span-2 flex items-center justify-between gap-3">
@@ -287,7 +273,7 @@
               <input type="checkbox" name="notify" class="accent-current" checked>
               Notificar por correo el estado de mi PQRS
             </label>
-            <button class="btn-primary ripple" type="submit">Enviar PQRS</button>
+            <button class="btn-primary btn-cta ripple px-5 py-3 rounded-xl" type="submit">Enviar PQRS</button>
           </div>
         </form>
       </div>
@@ -315,7 +301,7 @@
   </main>
 
   <script>
-    // Validación mínima del PQRS
+    // Validación mínima PQRS
     (function(){
       const f = document.getElementById('pqrsForm');
       if (!f) return;

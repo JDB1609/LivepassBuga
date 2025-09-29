@@ -9,19 +9,17 @@ import java.math.BigDecimal;
 
 public class EventDAO {
 
-    /** Mapea una fila del ResultSet a utils.Event */
+    /* ============ Mapper ============ */
     private Event map(ResultSet rs) throws SQLException {
         Event e = new Event();
         e.setId(rs.getInt("id"));
-        // opcional/nullable
+
         try { e.setOrganizerId((Integer) rs.getObject("organizer_id")); } catch (SQLException ignore) {}
 
         e.setTitle(rs.getString("title"));
         e.setVenue(rs.getString("venue"));
-
-        // NUEVO: genre y city
         try { e.setGenre(rs.getString("genre")); } catch (SQLException ignore) {}
-        try { e.setCity(rs.getString("city")); } catch (SQLException ignore) {}
+        try { e.setCity(rs.getString("city")); }  catch (SQLException ignore) {}
 
         Timestamp ts = null;
         try { ts = rs.getTimestamp("date_time"); } catch (SQLException ignore) {}
@@ -30,10 +28,8 @@ public class EventDAO {
         e.setCapacity(safeInt(rs, "capacity"));
         e.setSold(safeInt(rs, "sold"));
 
-        // status como String -> enum interno
         try { e.setStatus(rs.getString("status")); } catch (SQLException ignore) {}
 
-        // precio DECIMAL -> BigDecimal
         try { e.setPrice(rs.getBigDecimal("price")); } catch (SQLException ignore) {}
 
         return e;
@@ -43,11 +39,9 @@ public class EventDAO {
         try { return rs.getInt(col); } catch (SQLException e) { return 0; }
     }
 
-    /* ===============================
-       Listas / búsquedas públicas
-       =============================== */
+    /* ============ Listas públicas / búsquedas ============ */
 
-    /** Para la home: próximos publicados, ordenados por vendidos y fecha */
+    /** Próximos publicados, ordenados por vendidos y fecha (para home) */
     public List<Event> listFeatured(int limit) {
         String sql = """
             SELECT * FROM events
@@ -67,7 +61,7 @@ public class EventDAO {
         return out;
     }
 
-    /** Búsqueda con filtros + paginación para ExplorarEventos.jsp */
+    /** Buscador de ExplorarEventos.jsp con filtros y paginación */
     public List<Event> search(String q, String genre, String city,
                               BigDecimal pmin, BigDecimal pmax,
                               String order, int page, int pageSize) {
@@ -86,13 +80,11 @@ public class EventDAO {
         if (pmin  != null) { sb.append(" AND price >= ?"); p.add(pmin); }
         if (pmax  != null) { sb.append(" AND price <= ?"); p.add(pmax); }
 
-        // Orden
         sb.append(" ORDER BY ");
         if ("price_asc".equalsIgnoreCase(order)) sb.append("price ASC");
         else if ("price_desc".equalsIgnoreCase(order)) sb.append("price DESC");
-        else sb.append("date_time ASC"); // default
+        else sb.append("date_time ASC");
 
-        // Paginación
         sb.append(" LIMIT ? OFFSET ?");
         int offset = Math.max(0, (Math.max(1, page) - 1) * Math.max(1, pageSize));
         p.add(Math.max(1, pageSize));
@@ -138,7 +130,7 @@ public class EventDAO {
         } catch (Exception e) { throw new RuntimeException(e); }
     }
 
-    /** Distintos géneros (para el select) */
+    /** Distintos géneros (para selects) */
     public List<String> listGenres() {
         String sql = "SELECT DISTINCT genre FROM events WHERE genre IS NOT NULL AND genre<>'' ORDER BY genre";
         List<String> out = new ArrayList<>();
@@ -151,7 +143,7 @@ public class EventDAO {
         return out;
     }
 
-    /** Distintas ciudades (para el select) */
+    /** Distintas ciudades (para selects) */
     public List<String> listCities() {
         String sql = "SELECT DISTINCT city FROM events WHERE city IS NOT NULL AND city<>'' ORDER BY city";
         List<String> out = new ArrayList<>();
@@ -164,9 +156,7 @@ public class EventDAO {
         return out;
     }
 
-    /* =================================
-       CRUD usado por organizadores
-       ================================= */
+    /* ============ CRUD organizador ============ */
 
     public List<Event> listByOrganizer(int organizerId, String q, String status) {
         StringBuilder sb = new StringBuilder("SELECT * FROM events WHERE organizer_id=?");
@@ -234,9 +224,11 @@ public class EventDAO {
         return 0;
     }
 
+    /** FIX: ahora también actualiza 'sold' */
     public boolean update(Event e) {
         String sql = """
-          UPDATE events SET title=?, venue=?, genre=?, city=?, date_time=?, capacity=?, status=?, price=?
+          UPDATE events
+          SET title=?, venue=?, genre=?, city=?, date_time=?, capacity=?, sold=?, status=?, price=?
           WHERE id=? AND organizer_id=?
         """;
         Conexion cx = new Conexion();
@@ -252,12 +244,13 @@ public class EventDAO {
             else ps.setNull(5, Types.TIMESTAMP);
 
             ps.setInt(6, e.getCapacity());
-            ps.setString(7, String.valueOf(e.getStatus()));
-            ps.setBigDecimal(8, e.getPriceValue());
+            ps.setInt(7, e.getSold()); // <-- importante
+            ps.setString(8, String.valueOf(e.getStatus()));
+            ps.setBigDecimal(9, e.getPriceValue());
 
-            ps.setInt(9, e.getId());
-            if (e.getOrganizerId()!=null) ps.setInt(10, e.getOrganizerId());
-            else ps.setNull(10, Types.INTEGER);
+            ps.setInt(10, e.getId());
+            if (e.getOrganizerId()!=null) ps.setInt(11, e.getOrganizerId());
+            else ps.setNull(11, Types.INTEGER);
 
             return ps.executeUpdate() > 0;
         } catch (Exception ex) { throw new RuntimeException(ex); }
@@ -288,11 +281,9 @@ public class EventDAO {
         } catch (Exception ex) { throw new RuntimeException(ex); }
     }
 
-    /* ===============================
-       Utilidades internas
-       =============================== */
+    /* ============ Utilidades internas ============ */
 
-    /** Enlaza parámetros con sus tipos apropiados */
+    /** Enlaza parámetros con sus tipos */
     private void bind(PreparedStatement ps, List<Object> params) throws SQLException {
         int idx = 1;
         for (Object o : params) {
