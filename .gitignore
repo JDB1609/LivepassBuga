@@ -1,0 +1,29 @@
+# === Carpetas generadas automáticamente por NetBeans ===
+/build/
+/dist/
+/nbproject/private/
+
+# === Archivos de configuración local ===
+/nbproject/project.properties
+/nbproject/genfiles.properties
+
+# === Archivos temporales del sistema ===
+*.class
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+# === Configuración de IDE o usuario ===
+/out/
+/.idea/
+/.vscode/
+/target/
+/bin/
+
+# === Archivos de sistema Git Bash o NetBeans ===
+/nbproject/private/
+/build/
+/dist/
