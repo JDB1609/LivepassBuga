@@ -1,0 +1,17 @@
+/build/
+/dist/
+/nbproject/private/
+/nbproject/project.properties
+/nbproject/genfiles.properties
+*.class
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+/out/
+/.idea/
+/.vscode/
+/target/
+/bin/

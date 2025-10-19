@@ -20,7 +20,7 @@ public class Conexion {
     // === Config DB (ajusta a tu entorno) ===
     private String BD_NAME   = "livepass";     // <-- cámbialo a "comerciobuga" si tu BD se llama así
     private String USER      = "root";
-    private String PASS      = "";
+    private String PASS      = "root";
     private String HOST      = "127.0.0.1";
     private String PORT      = "3306";
 
