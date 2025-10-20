@@ -97,8 +97,8 @@
     <!-- Breadcrumb + Pasos -->
     <div class="flex flex-col gap-3 mb-6">
       <nav class="crumbs text-sm">
-        <a href="<%= request.getContextPath() %>/Vista/PaginaPrincipal.jsp">Inicio</a> /
-        <a href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">Eventos</a> /
+        <a href="<%= request.getContextPath() %>/Vista/PaginaPrincipal.jsp" aria-label="Ir a la página de inicio">Inicio</a> /
+        <a href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp" aria-label="Explorar eventos disponibles">Eventos</a> /
         <span class="opacity-100 font-semibold">Checkout</span>
       </nav>
       <div class="steps">
@@ -130,11 +130,11 @@
           <input type="hidden" name="eventId" value="<%= eventId %>"/>
           <label class="text-white/80">Cantidad</label>
           <div class="qty-wrap">
-            <button class="qty-btn" type="button" id="btnMinus">−</button>
+            <button id= "btnMinus" aria-label="Disminuir cantidad de entradas" class="qty-btn" type="button" id="btnMinus">−</button>
             <input class="qty-input" id="qtyInput" name="qty" type="number" min="1" max="<%= Math.max(1, avail) %>" value="<%= qty %>"/>
-            <button class="qty-btn" type="button" id="btnPlus">+</button>
+            <button id= "btnPlus" aria-label="Aumentar cantidad de entradas" class="qty-btn" type="button" id="btnPlus">+</button>
           </div>
-          <button class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30" type="submit">Actualizar</button>
+          <button class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30" type="submit" aria-label="Actualizar información del pedido">Actualizar</button>
         </form>
 
         <% if (avail == 0) { %>
@@ -158,20 +158,20 @@
         <h2 class="font-bold text-lg mb-2">Preguntas frecuentes</h2>
         <div class="space-y-3">
           <div class="faq-item">
-            <button class="faq-q flex items-center justify-between w-full">¿Cómo recibo mis entradas?
-              <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
+            <button arial-label="Mostrar información de cómo recibir las entradas" class="faq-q flex items-center justify-between w-full"
+              >¿Cómo recibo mis entradas?<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
             </button>
             <div class="faq-a">Tras el pago, te enviamos el QR al correo y lo verás en “Mis tickets”.</div>
           </div>
           <div class="faq-item">
-            <button class="faq-q flex items-center justify-between w-full">¿Puedo entrar sin internet?
-              <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
+            <button arial-label="Mostrar respuesta sobre entrar sin internet" class="faq-q flex items-center justify-between w-full">
+                ¿Puedo entrar sin internet?<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
             </button>
             <div class="faq-a">Sí. Descarga tu QR; los validadores funcionan offline.</div>
           </div>
           <div class="faq-item">
-            <button class="faq-q flex items-center justify-between w-full">¿Puedo transferir mi ticket?
-              <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
+            <button arial-label="Mostrar información sobre transferencia de ticket" class="faq-q flex items-center justify-between w-full">
+                ¿Puedo transferir mi ticket?<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
             </button>
             <div class="faq-a">Según la política del organizador puedes transferirlo a otro usuario.</div>
           </div>
@@ -189,7 +189,9 @@
           <div class="flex gap-2">
             <input type="text" name="coupon" placeholder="Cupón (LIVE10 o VIP20)" value="<%= (coupon!=null?coupon:"") %>"
                    class="w-full px-3 py-2 rounded-xl bg-transparent border border-white/15 focus:border-white/30 outline-none">
-            <button class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30" type="submit">Aplicar</button>
+            <button 
+                arial-label="Aplicar descuento" class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30" type="submit">Aplicar
+            </button>
           </div>
           <% if (coupon != null && !coupon.isEmpty()) { %>
             <div class="mt-2 text-sm <%= couponValid ? "text-green-300" : "text-pink-300" %>">
@@ -236,7 +238,7 @@
         </div>
 
         <div class="mt-4 space-y-3">
-          <a id="btnPay" class="btn-primary ripple block text-center <%= (avail==0?"opacity-50 pointer-events-none":"") %>"
+          <a id="btnPay" arial-label="Proceder al pago del pedido" class="btn-primary ripple block text-center <%= (avail==0?"opacity-50 pointer-events-none":"") %>"
              href="<%= request.getContextPath() %>/Vista/PagoSimulado.jsp?eventId=<%= eventId %>&qty=<%= qty %>&coupon=<%= (coupon!=null?coupon:"") %>">
             Pagar ahora (<%= COP.format(total) %>)
           </a>
@@ -297,7 +299,7 @@
           <label class="inline-flex items-center gap-2 text-sm">
             <input type="checkbox" required> Autorizo el tratamiento de mis datos para gestionar mi solicitud.
           </label>
-          <button class="btn-primary">Enviar PQRS</button>
+          <button arial-label="Enviar formulario de PQRS" class="btn-primary">Enviar PQRS</button>
         </div>
       </form>
     </section>
