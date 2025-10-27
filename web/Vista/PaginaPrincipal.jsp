@@ -332,6 +332,7 @@
     <div class="max-w-6xl mx-auto px-5 py-6 flex flex-col sm:flex-row items-center justify-between text-white/70">
       <div class="font-extrabold flex items-center gap-2">Livepass <span class="text-aqua">Buga</span></div>
       <div>© <%= java.time.Year.now() %> Livepass Buga</div>
+      <div><a class="px-5 py-3 rounded-xl border border-white/15 hover:border-white/30 font-bold transition" href="<%= request.getContextPath() %>/Vista/LoginAdmin.jsp">Login Adminsitrador</a></div>
     </div>
   </footer>
 
