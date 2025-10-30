@@ -29,9 +29,11 @@
     <p>Aquí será el panel administrativo con acceso a:</p>
     <ul>
         <li><a href="<%= request.getContextPath() %>/Vista/CrearAdministrador.jsp">Crear adminsitrador</a></li>
+        <li><a href="<%= request.getContextPath() %>/Vista/ListarEditarAdministrador.jsp">Listar / Editar administradores</a></li>
         <li><a href="<%= request.getContextPath() %>/Vista/AprobacionOrganizadores.jsp">Aprobación de organizadores</a></li>
         <li><a href="<%= request.getContextPath() %>/Vista/DashboardVentas.jsp">Dashboard de ventas</a></li>
         <li><a href="<%= request.getContextPath() %>/Vista/ReportesFinancieros.jsp">Reportes financieros</a></li>
+    
     </ul>
 
     <form action="<%= request.getContextPath() %>/Control/ct_logout_admin.jsp" method="post">

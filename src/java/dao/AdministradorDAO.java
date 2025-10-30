@@ -5,6 +5,8 @@ import utils.PasswordUtil;
 import utils.Administrador;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class AdministradorDAO {
@@ -78,4 +80,54 @@ public class AdministradorDAO {
             a.setStatus(Administrador.Status.valueOf(statusStr.toUpperCase()));
         return a;
     }
+    
+    // Lista todos los administradores
+    public List<Administrador> listAll() {
+        String sql = "SELECT * FROM administrator ORDER BY created_at DESC";
+        Conexion cx = new Conexion();
+        List<Administrador> out = new ArrayList<>();
+        try (Connection cn = cx.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                out.add(map(rs));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error listando administradores: " + e.getMessage(), e);
+        }
+        return out;
+    }
+
+    // Actualiza un administrador (si plainPass es null o vacío no cambia la contraseña)
+    public boolean update(int id, String name, String email, String phone, String plainPass, Administrador.Status status) {
+        Conexion cx = new Conexion();
+        StringBuilder sb = new StringBuilder("UPDATE administrator SET name = ?, email = ?, phone = ?, status = ?");
+        boolean updatePass = plainPass != null && !plainPass.trim().isEmpty();
+        if (updatePass) sb.append(", pass_hash = ?");
+        sb.append(" WHERE id = ?");
+
+        try (Connection cn = cx.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sb.toString())) {
+
+            int idx = 1;
+            ps.setString(idx++, name);
+            ps.setString(idx++, email);
+            ps.setString(idx++, phone);
+            ps.setString(idx++, status != null ? status.name() : Administrador.Status.ACTIVO.name());
+            if (updatePass) {
+                String hash = PasswordUtil.hash(plainPass);
+                ps.setString(idx++, hash);
+            }
+            ps.setInt(idx++, id);
+
+            int rows = ps.executeUpdate();
+            return rows > 0;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error actualizando administrador: " + e.getMessage(), e);
+        }
+    }
+
+  
 }
