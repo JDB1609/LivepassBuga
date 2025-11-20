@@ -206,10 +206,33 @@
             for (int idx=0; idx<max; idx++) {
               Event ev = events.get(idx);
               String st = (ev.getStatus()!=null ? ev.getStatus().name() : "BORRADOR");
-              String pill =
-                 "PUBLICADO".equalsIgnoreCase(st) ? "bg-emerald-500/20 text-emerald-200"
-               : "FINALIZADO".equalsIgnoreCase(st) ? "bg-white/15 text-white/80"
-               : "bg-yellow-500/20 text-yellow-200";
+                String pill = 
+                    "PUBLICADO".equalsIgnoreCase(st) 
+                        ? "bg-emerald-500/20 text-emerald-200"
+                    : ("RECHAZADO".equalsIgnoreCase(st) || "CANCELADO".equalsIgnoreCase(st))
+                        ? "bg-red-500/20 text-red-200"
+                    : "FINALIZADO".equalsIgnoreCase(st)
+                        ? "bg-white text-black"
+                    : "bg-yellow-500/20 text-yellow-200";
+              
+            
+            boolean canEdit = false;
+            
+
+            switch (st.toUpperCase()) {
+              case "BORRADOR":
+                canEdit = true;
+                break;
+              case "PENDIENTE":
+                canEdit = true;
+                break;
+              case "PUBLICADO":
+              case "RECHAZADO":
+              case "FINALIZADO":
+              case "CANCELADO":
+              default:
+                break; // no permitir nada
+            }  
               String dateStr = (ev.getDateTime()!=null) ? ev.getDateTime().format(df) : ev.getDate();
               int cap = Math.max(0, ev.getCapacity());
               int sold = Math.max(0, ev.getSold());
@@ -230,8 +253,12 @@
           <div class="mt-4 flex flex-wrap gap-2">
             <a class="btn-ghost ripple"
                href="<%= request.getContextPath() %>/Vista/DashboardOrganizador.jsp?eventId=<%= ev.getId() %>">Panel</a>
-            <a class="btn-primary ripple"
-               href="<%= request.getContextPath() %>/Vista/EventoEditar.jsp?id=<%= ev.getId() %>">Editar</a>
+            <% if (canEdit) { %>
+              <a class="px-4 py-2 rounded-lg border border-white/15 hover:border-white/30 font-bold transition"
+                 href="<%= request.getContextPath() %>/Vista/EventoEditar.jsp?id=<%= ev.getId() %>">
+                Editar
+              </a>
+            <% } %>
             <a class="btn-ghost ripple"
                href="<%= request.getContextPath() %>/Vista/EventoDetalle.jsp?id=<%= ev.getId() %>">Ver público</a>
           </div>

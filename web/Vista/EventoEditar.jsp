@@ -34,7 +34,9 @@
   int sold       = ev!=null ? Math.max(0, ev.getSold()) : 0;
   BigDecimal price = (ev!=null && ev.getPriceValue()!=null) ? ev.getPriceValue() : BigDecimal.ZERO;
   String status  = ev!=null && ev.getStatus()!=null ? String.valueOf(ev.getStatus()) : "BORRADOR"; // BORRADOR | PUBLICADO | FINALIZADO
-
+  String descripcion = ev!=null && ev.getDescription()!=null ? ev.getDescription() : "";
+  String image = ev!=null && ev.getImage()!=null ? ev.getImage() : "";
+  
   // datetime-local → yyyy-MM-dd'T'HH:mm
   String dtLocal = "";
   if (ev!=null && ev.getDateTime()!=null) {
@@ -161,8 +163,7 @@
 
         <div class="field">
           <label for="f-desc">Descripción (opcional)</label>
-          <textarea id="f-desc" class="texx" name="description" rows="6" placeholder="Cuéntanos del evento..."><%= desc %></textarea>
-          <div class="hint">Próximamente: se podrá formatear y subir imágenes.</div>
+          <textarea id="f-desc" class="texx" name="description" rows="6" placeholder="Cuéntanos del evento..."><%= descripcion %></textarea>
         </div>
 
         <div class="row row-2">
@@ -218,12 +219,26 @@
             <label for="f-status">Estado</label>
             <select id="f-status" class="selx" name="status" required>
               <option value="BORRADOR"   <%= "BORRADOR".equalsIgnoreCase(status)?"selected":"" %>>Borrador</option>
-              <option value="PUBLICADO"  <%= "PUBLICADO".equalsIgnoreCase(status)?"selected":"" %>>Publicado</option>
+              <option value="PENDIENTE"  <%= "PENDIENTE".equalsIgnoreCase(status)?"selected":"" %>>A revisión</option>
               <option value="FINALIZADO" <%= "FINALIZADO".equalsIgnoreCase(status)?"selected":"" %>>Finalizado</option>
             </select>
           </div>
         </div>
-
+        <div class="row row-1">
+        </div>
+        <div class="row row-1">
+            <div class="field">
+              <label for="f-img">URL de la imagen</label>
+              <input 
+                id="f-img"
+                class="inpx"
+                name="image"
+                maxlength="500"
+                value="<%= image %>"
+                placeholder="https://example.com/img.jpg"
+              >
+            </div>
+        </div>
         <div class="sep"></div>
 
         <div class="flex flex-wrap gap-8 items-center pt-1">
@@ -253,6 +268,17 @@
           <div><b>Disponibles:</b> <%= Math.max(0, capacity - sold) %></div>
           <div><b>Precio:</b> <%= price %> COP</div>
           <div><b>Estado:</b> <%= status %></div>
+          <div><b>Descripción:</b> <%= descripcion.isEmpty() ? "—" : descripcion %></div>
+          <div><b>Imagen:</b> <%= image.isEmpty() ? "—" : image %></div>
+          <div> <b>Imagen:</b>
+            <% if (image != null && !image.isEmpty()) { %>
+                <br>
+                <img src="<%= image %>" alt="Imagen del evento"
+                     style="max-width:200px; border-radius:10px; margin-top:5px;">
+            <% } else { %>
+                —
+            <% } %>
+</div>
         </div>
         <div class="sep"></div>
         <p class="hint mt-3">Consejo: mantén “Publicado” solo cuando el contenido esté completo y correcto.</p>

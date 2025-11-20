@@ -20,14 +20,19 @@
   String capStr  = request.getParameter("capacity");
   String priceStr= request.getParameter("price");
   String status  = request.getParameter("status");
+  String description = request.getParameter("description");
+  String image = request.getParameter("image");
+  
 
   try {
     Event e = new Event();
     e.setOrganizerId(uid);
     e.setTitle(title);
     e.setVenue(venue);
-    // si tu tabla usa columns city y genre, Event puede ignorarlas; las mapeas en el DAO INSERT si ya lo soportas
-    // (o añade setters en Event si lo deseas)
+    e.setCity(city);
+    e.setGenre(genre);
+    e.setDescription(description);
+    e.setImage(image);
     java.time.LocalDateTime dt = LocalDateTime.parse(dtStr);
     e.setDateTime(dt);
     e.setCapacity(Integer.parseInt(capStr));

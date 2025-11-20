@@ -64,11 +64,37 @@
           <label class="block mb-2 text-white/80">Estado</label>
           <select name="status" class="ui-select sm w-full">
             <option value="BORRADOR">Borrador</option>
-            <option value="PUBLICADO">Publicado</option>
+            <option value="PENDIENTE">A revisión</option>
           </select>
         </div>
       </div>
 
+
+      
+      <div>
+        <label class="block mb-2 text-white/80">Descripción</label>
+        <textarea 
+          name="description"
+          maxlength="500"
+          rows="3"
+          placeholder="Describe el evento..."
+          class="w-full px-4 py-2 rounded-xl bg-white/5 ring resize-none overflow-auto
+                 focus:outline-none focus:ring-2 focus:ring-primary"
+        ></textarea>
+        <p class="text-sm text-white/50 mt-1">Máximo 500 caracteres</p>
+      </div>
+
+      <!-- IMAGEN (URL) -->
+      <div>
+        <label class="block mb-2 text-white/80">URL de la imagen</label>
+        <input 
+          name="image"
+          placeholder="https://ejemplo.com/imagen.jpg"
+          class="w-full px-4 py-2 rounded-xl bg-white/5 ring
+                 focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+      
       <div class="mt-4 flex gap-3">
         <button class="btn-primary ripple" type="submit">Crear</button>
         <a class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30"

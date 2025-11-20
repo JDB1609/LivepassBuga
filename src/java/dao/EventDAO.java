@@ -12,12 +12,13 @@ public class EventDAO {
     /* ============ Mapper ============ */
     private Event map(ResultSet rs) throws SQLException {
         Event e = new Event();
-        e.setId(rs.getInt("id"));
+        
+        try {e.setId(rs.getInt("id"));} catch (SQLException ignore) {}
 
         try { e.setOrganizerId((Integer) rs.getObject("organizer_id")); } catch (SQLException ignore) {}
 
-        e.setTitle(rs.getString("title"));
-        e.setVenue(rs.getString("venue"));
+        try {e.setTitle(rs.getString("title")); } catch (SQLException ignore) {}
+        try {e.setVenue(rs.getString("venue")); } catch (SQLException ignore) {}
         try { e.setGenre(rs.getString("genre")); } catch (SQLException ignore) {}
         try { e.setCity(rs.getString("city")); }  catch (SQLException ignore) {}
 
@@ -32,6 +33,13 @@ public class EventDAO {
 
         try { e.setPrice(rs.getBigDecimal("price")); } catch (SQLException ignore) {}
 
+        try { e.setDescription(rs.getString("description")); } catch (SQLException ignore) {}
+        try { e.setImage(rs.getString("image")); } catch (SQLException ignore) {}
+        try {
+            Object obj = rs.getObject("created_by");
+            if (obj != null) e.setApproved_By(Long.valueOf(obj.toString()));
+        } catch (SQLException ignore) {}
+        
         return e;
     }
 
@@ -57,7 +65,7 @@ public class EventDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) out.add(map(rs));
             }
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] listFeatured(limit=" + limit + ") con SQL:\n" + sql + "\nCausa: " + e.getMessage(), e); }
         return out;
     }
 
@@ -98,7 +106,7 @@ public class EventDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) out.add(map(rs));
             }
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] search() con SQL: "+ sb ,e); }
         return out;
     }
 
@@ -127,7 +135,7 @@ public class EventDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt(1) : 0;
             }
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] countSearch() con SQL: " + sb, e); }
     }
 
     /** Distintos géneros (para selects) */
@@ -139,7 +147,7 @@ public class EventDAO {
              PreparedStatement ps = cn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) out.add(rs.getString(1));
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] listGenres() - No se pudieron obtener los géneros.\n" + "SQL: " + sql + "\n" + "Causa: " + e.getMessage(), e); }
         return out;
     }
 
@@ -152,7 +160,7 @@ public class EventDAO {
              PreparedStatement ps = cn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) out.add(rs.getString(1));
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] listCities() - No se pudieron obtener las ciudades.\n" + "SQL: " + sql + "\n" + "Causa: " + e.getMessage(), e); }
         return out;
     }
 
@@ -175,7 +183,7 @@ public class EventDAO {
              PreparedStatement ps = cn.prepareStatement(sb.toString())) {
             bind(ps, p);
             try (ResultSet rs = ps.executeQuery()) { while (rs.next()) out.add(map(rs)); }
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] listByOrganizer() - No se pudieron obtener los eventos\n" + "SQL: " + sb + "\n" + "Parámetros: " + p + "\n" + "Causa: " + e.getMessage(), e); }
         return out;
     }
 
@@ -188,15 +196,15 @@ public class EventDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(map(rs));
             }
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] findById(" + id + ") - No se pudo obtener el evento.\n" + "SQL: " + sql + "\n" + "Causa: " + e.getMessage(), e ); }
         return Optional.empty();
     }
 
     public int create(Event e) {
         String sql = """
             INSERT INTO events(organizer_id, title, venue, genre, city, date_time,
-                               capacity, sold, status, price)
-            VALUES(?,?,?,?,?,?,?,?,?,?)
+                               capacity, sold, status, price, description, image)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
         """;
         Conexion cx = new Conexion();
         try (Connection cn = cx.getConnection();
@@ -217,10 +225,11 @@ public class EventDAO {
             ps.setInt(8, e.getSold());
             ps.setString(9, String.valueOf(e.getStatus()));
             ps.setBigDecimal(10, e.getPriceValue());
-
+            ps.setString(11, e.getDescription());
+            ps.setString(12, e.getImage());
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) { if (rs.next()) return rs.getInt(1); }
-        } catch (Exception ex) { throw new RuntimeException(ex); }
+        } catch (Exception ex) { throw new RuntimeException("[DAO ERROR] create(Event) - No se pudo crear el evento.\n" + "SQL: " + sql + "\n" + "Causa: " + ex.getMessage(), ex); }
         return 0;
     }
 
@@ -228,7 +237,7 @@ public class EventDAO {
     public boolean update(Event e) {
         String sql = """
           UPDATE events
-          SET title=?, venue=?, genre=?, city=?, date_time=?, capacity=?, sold=?, status=?, price=?
+          SET title=?, venue=?, genre=?, city=?, date_time=?, capacity=?, sold=?, status=?, price=?, description=?, image=?
           WHERE id=? AND organizer_id=?
         """;
         Conexion cx = new Conexion();
@@ -248,12 +257,16 @@ public class EventDAO {
             ps.setString(8, String.valueOf(e.getStatus()));
             ps.setBigDecimal(9, e.getPriceValue());
 
-            ps.setInt(10, e.getId());
+
+            ps.setString(10, e.getDescription());
+            ps.setString(11, e.getImage());            
+            
+            ps.setInt(12, e.getId());
             if (e.getOrganizerId()!=null) ps.setInt(11, e.getOrganizerId());
-            else ps.setNull(11, Types.INTEGER);
+            else ps.setNull(13, Types.INTEGER);
 
             return ps.executeUpdate() > 0;
-        } catch (Exception ex) { throw new RuntimeException(ex); }
+        } catch (Exception ex) { throw new RuntimeException("[DAO ERROR] update(Event) - No se pudo actualizar el evento.\n" + "SQL: " + sql + "\n" + "Causa: " + ex.getMessage(), ex); }
     }
 
     public boolean delete(int id, int organizerId) {
@@ -264,12 +277,12 @@ public class EventDAO {
             ps.setInt(1, id);
             ps.setInt(2, organizerId);
             return ps.executeUpdate() > 0;
-        } catch (Exception ex) { throw new RuntimeException(ex); }
+        } catch (Exception ex) { throw new RuntimeException("[DAO ERROR] delete(" + id + ", organizer=" + organizerId + ") - No se pudo eliminar el evento.\n" + "SQL: " + sql + "\n" + "Causa: " + ex.getMessage(), ex); }
     }
 
     public boolean toggleStatus(int id, int organizerId, String toStatus) {
         String to = (toStatus!=null ? toStatus.toUpperCase() : "BORRADOR");
-        if (!List.of("PUBLICADO","BORRADOR","FINALIZADO").contains(to)) to = "BORRADOR";
+        if (!List.of("PUBLICADO","BORRADOR","FINALIZADO","PENDIENTE").contains(to)) to = "BORRADOR";
         String sql = "UPDATE events SET status=? WHERE id=? AND organizer_id=?";
         Conexion cx = new Conexion();
         try (Connection cn = cx.getConnection();
@@ -278,7 +291,7 @@ public class EventDAO {
             ps.setInt(2, id);
             ps.setInt(3, organizerId);
             return ps.executeUpdate() > 0;
-        } catch (Exception ex) { throw new RuntimeException(ex); }
+        } catch (Exception ex) { throw new RuntimeException("[DAO ERROR] toggleStatus(" + id + ") - No se pudo actualizar el estado.\n" + "Nuevo estado: " + to + "\n" + "SQL: " + sql + "\n" + "Causa: " + ex.getMessage(), ex ); }
     }
 
     /* ============ Utilidades internas ============ */

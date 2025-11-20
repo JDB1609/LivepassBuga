@@ -9,7 +9,7 @@ import java.util.Locale;
 
 public class Event implements Serializable {
 
-    public enum Status { PUBLICADO, BORRADOR, FINALIZADO }
+    public enum Status { PUBLICADO, BORRADOR, FINALIZADO, PENDIENTE, CANCELADO, RECHAZADO }
 
     private int id;
     private Integer organizerId;
@@ -30,11 +30,18 @@ public class Event implements Serializable {
             DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final NumberFormat CURRENCY_CO =
             NumberFormat.getCurrencyInstance(new Locale("es", "CO"));
-
+    
+    
+    // Revision de Base de datos 15/11/2025 para incluir descripcion imagenes y foranea de administrador
+    private String description;
+    private String image;
+    private Long approved_by;
+    
     public Event() {}
 
     public Event(int id, String title, String venue, LocalDateTime dateTime,
-                 int capacity, int sold, Status status, BigDecimal price) {
+                 int capacity, int sold, Status status, BigDecimal price, 
+                 String description, String image) {
         this.id = id;
         this.title = title;
         this.venue = venue;
@@ -43,6 +50,8 @@ public class Event implements Serializable {
         this.sold = Math.max(0, sold);
         this.status = (status != null ? status : Status.BORRADOR);
         this.price  = (price  != null ? price  : BigDecimal.ZERO);
+        this.description = description;
+        this.image = image;
     }
 
     // ===== Getters usados en vistas/DAO =====
@@ -73,6 +82,13 @@ public class Event implements Serializable {
 
     /** Alias si ya lo usabas en alguna parte */
     public BigDecimal getPriceValue() { return price; }
+    
+    
+    //Agregados en el dia 15/11/2025
+    public String getDescription() { return description; }
+    
+    public String getImage() { return image; }
+    public Long getApproved_By() { return approved_by; }
 
     // ===== Setters =====
     public void setId(int id) { this.id = id; }
@@ -94,6 +110,8 @@ public class Event implements Serializable {
         try { this.status = Status.valueOf(statusStr.toUpperCase()); }
         catch (IllegalArgumentException ex) { this.status = Status.BORRADOR; }
     }
+    
+    
 
     public void setPrice(BigDecimal price) { this.price = (price != null ? price : BigDecimal.ZERO); }
 
@@ -105,13 +123,19 @@ public class Event implements Serializable {
         try { this.price = new BigDecimal(s); }
         catch (NumberFormatException ex) { this.price = BigDecimal.ZERO; }
     }
+    //Cambio a base de datos del 15/11/2025 para incluir  descripcion, imagen y 
+    public void setDescription(String description) { this.description = (description==null? "": description.trim());}
+    public void setImage(String image) { this.image = (image==null? "": image.trim());}
+    public void setApproved_By(Long approved_by) { this.approved_by = approved_by; }
+    
 
-    // ===== Utilidades =====
+// ===== Utilidades =====
     public int getAvailability() { return Math.max(0, capacity - sold); }
     public boolean isPublicado()  { return status == Status.PUBLICADO; }
     public boolean isBorrador()   { return status == Status.BORRADOR; }
     public boolean isFinalizado() { return status == Status.FINALIZADO; }
-
+    public boolean isPendiente() { return status == Status.PENDIENTE; }
+    
     @Override
     public String toString() {
         return "Event{" +
@@ -125,6 +149,7 @@ public class Event implements Serializable {
                 ", sold=" + sold +
                 ", status=" + status +
                 ", price=" + price +
+                ", descripcion=" + description +
                 '}';
     }
 }

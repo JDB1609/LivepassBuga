@@ -42,6 +42,9 @@
             <option value="PUBLICADO" <%= "PUBLICADO".equalsIgnoreCase(stSel) ? "selected" : "" %>>Publicado</option>
             <option value="BORRADOR"  <%= "BORRADOR".equalsIgnoreCase(stSel)  ? "selected" : "" %>>Borrador</option>
             <option value="FINALIZADO" <%= "FINALIZADO".equalsIgnoreCase(stSel)? "selected" : "" %>>Finalizado</option>
+            <option value="PENDIENTE" <%= "PENDIENTE".equalsIgnoreCase(stSel)? "selected" : "" %>>Pendiente</option>
+            <option value="RECHAZADO" <%= "RECHAZADO".equalsIgnoreCase(stSel)? "selected" : "" %>>Rechazado</option>
+            <option value="CANCELADO" <%= "CANCELADO".equalsIgnoreCase(stSel)? "selected" : "" %>>Cancelado</option>
           </select>
           <button class="btn-primary ripple" type="submit">Filtrar</button>
         </form>
@@ -66,12 +69,41 @@
           for (int idx = 0; idx < events.size(); idx++) {
             Event ev = events.get(idx);
             String status = (ev.getStatus()==null) ? "" : ev.getStatus().toString();
-            String pill =
-              "PUBLICADO".equalsIgnoreCase(status) ? "bg-emerald-500/20 text-emerald-200" :
-              ("FINALIZADO".equalsIgnoreCase(status) ? "bg-white/15 text-white/80" :
-                                                       "bg-yellow-500/20 text-yellow-200");
-            String toggleTo   = "PUBLICADO".equalsIgnoreCase(status) ? "BORRADOR" : "PUBLICADO";
-            String toggleText = "PUBLICADO".equalsIgnoreCase(status) ? "Despublicar" : "Publicar";
+            String pill = 
+                "PUBLICADO".equalsIgnoreCase(status) 
+                    ? "bg-emerald-500/20 text-emerald-200"
+                : ("RECHAZADO".equalsIgnoreCase(status) || "CANCELADO".equalsIgnoreCase(status))
+                    ? "bg-red-500/20 text-red-200"
+                : "FINALIZADO".equalsIgnoreCase(status)
+                    ? "bg-white text-black"
+                : "bg-yellow-500/20 text-yellow-200";
+
+            /* Acciones permitidas */
+            boolean canSendReview = false;
+            boolean canEdit = false;
+            boolean canDelete = false;
+
+            switch (status.toUpperCase()) {
+              case "BORRADOR":
+                canSendReview = true;
+                canEdit = true;
+                canDelete = true;
+                break;
+
+              case "PUBLICADO":
+                canDelete = true; // cancelar publicación
+                break;
+
+              case "PENDIENTE":
+                canDelete = true; // cancelar publicación
+                canEdit = true;
+                break;
+              case "RECHAZADO":
+              case "FINALIZADO":
+              case "CANCELADO":
+              default:
+                break; // no permitir nada
+            }
             String dateStr    = (ev.getDateTime()!=null) ? ev.getDateTime().format(df) : ev.getDate();
             String evTitle    = ev.getTitle()!=null ? ev.getTitle() : "";
             String evTitleJs  = evTitle.replace("'", "\\'");
@@ -92,26 +124,33 @@
         <p class="mt-2 font-extrabold"><%= ev.getPriceFormatted() %></p>
 
         <div class="mt-5 flex flex-wrap gap-2">
+          <!-- Panel siempre visible -->
           <a class="btn-primary ripple"
              href="<%= request.getContextPath() %>/Vista/DashboardOrganizador.jsp?eventId=<%= ev.getId() %>">
             Panel
           </a>
 
-          <a class="px-4 py-2 rounded-lg border border-white/15 hover:border-white/30 font-bold transition"
-             href="<%= request.getContextPath() %>/Vista/EventoEditar.jsp?id=<%= ev.getId() %>">
-            Editar
-          </a>
+          <% if (canSendReview) { %>
+            <a class="px-4 py-2 rounded-lg bg-blue-500/20 text-blue-200 hover:bg-blue-500/30 font-bold transition"
+               href="<%= request.getContextPath() %>/Control/ct_event_send_review.jsp?id=<%= ev.getId() %>">
+              Enviar a revisión
+            </a>
+          <% } %>
 
-          <a class="px-4 py-2 rounded-lg border border-white/15 hover:border-white/30 font-bold transition"
-             href="<%= request.getContextPath() %>/Control/ct_event_toggle.jsp?id=<%= ev.getId() %>&to=<%= toggleTo %>">
-            <%= toggleText %>
-          </a>
+          <% if (canEdit) { %>
+            <a class="px-4 py-2 rounded-lg border border-white/15 hover:border-white/30 font-bold transition"
+               href="<%= request.getContextPath() %>/Vista/EventoEditar.jsp?id=<%= ev.getId() %>">
+              Editar
+            </a>
+          <% } %>
 
-          <a class="px-4 py-2 rounded-lg border border-pink-500/40 text-pink-300 hover:border-pink-300 font-bold transition"
-             href="<%= request.getContextPath() %>/Control/ct_event_delete.jsp?id=<%= ev.getId() %>"
-             onclick="return confirm('¿Eliminar el evento \'"+ "<%= evTitleJs %>" +"\'? Esta acción no se puede deshacer.');">
-            Eliminar
-          </a>
+          <% if (canDelete) { %>
+            <a class="px-4 py-2 rounded-lg border border-pink-500/40 text-pink-300 hover:border-pink-300 font-bold transition"
+               href="<%= request.getContextPath() %>/Control/ct_event_delete.jsp?id=<%= ev.getId() %>"
+               onclick="return confirm('¿Eliminar el evento \\\"<%= evTitleJs %>\\\"? Esta acción no se puede deshacer.');">
+              Eliminar
+            </a>
+          <% } %>
         </div>
       </article>
       <%
