@@ -32,6 +32,6 @@
   }
 
   // Redirige al login de administradores
-  String loginAdmin = request.getContextPath() + "/Vista/LoginAdmin.jsp";
+  String loginAdmin = request.getContextPath() + "/Vista/PaginaPrincipal.jsp";
   response.sendRedirect(loginAdmin);
 %>

@@ -1,6 +1,11 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ page import="java.util.List" %>
 <%@ page import="utils.Event" %>
+<%
+  String  role = (String)  session.getAttribute("role");
+%>
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -332,7 +337,14 @@
     <div class="max-w-6xl mx-auto px-5 py-6 flex flex-col sm:flex-row items-center justify-between text-white/70">
       <div class="font-extrabold flex items-center gap-2">Livepass <span class="text-aqua">Buga</span></div>
       <div>© <%= java.time.Year.now() %> Livepass Buga</div>
-      <div><a class="px-5 py-3 rounded-xl border border-white/15 hover:border-white/30 font-bold transition" href="<%= request.getContextPath() %>/Vista/LoginAdmin.jsp">Login Adminsitrador</a></div>
+        <% if (role == null) { %>
+        <div>
+          <a class="px-5 py-3 rounded-xl border border-white/15 hover:border-white/30 font-bold transition"
+             href="<%= request.getContextPath() %>/Vista/LoginAdmin.jsp">
+             Login Administrador
+          </a>
+        </div>
+        <% } %>
     </div>
   </footer>
 

@@ -135,6 +135,8 @@ public class Event implements Serializable {
     public boolean isBorrador()   { return status == Status.BORRADOR; }
     public boolean isFinalizado() { return status == Status.FINALIZADO; }
     public boolean isPendiente() { return status == Status.PENDIENTE; }
+    public boolean isRechazado() { return status == Status.RECHAZADO; }
+    public boolean isCancelado() { return status == Status.CANCELADO; }
     
     @Override
     public String toString() {

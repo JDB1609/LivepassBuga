@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 public class EventDAO {
 
     /* ============ Mapper ============ */
-    private Event map(ResultSet rs) throws SQLException {
+    public Event map(ResultSet rs) throws SQLException {
         Event e = new Event();
         
         try {e.setId(rs.getInt("id"));} catch (SQLException ignore) {}
@@ -69,6 +69,36 @@ public class EventDAO {
         return out;
     }
 
+    public List<Event> listPendingPaged(int limit, int offset) {
+        String sql = """
+            SELECT * FROM events
+            WHERE status='PENDIENTE'
+            ORDER BY date_time ASC
+            LIMIT ? OFFSET ?
+        """;
+
+        List<Event> out = new ArrayList<>();
+        Conexion cx = new Conexion();
+
+        try (Connection cn = cx.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setInt(1, limit);
+            ps.setInt(2, offset);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) out.add(map(rs));
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("[DAO ERROR] listPendingPaged(limit="+limit+", offset="+offset+") con SQL:\n" + sql + "\nCausa: " + e.getMessage(), e);
+        }
+
+        return out;
+    }
+    
+    
+    
     /** Buscador de ExplorarEventos.jsp con filtros y paginación */
     public List<Event> search(String q, String genre, String city,
                               BigDecimal pmin, BigDecimal pmax,
@@ -137,6 +167,22 @@ public class EventDAO {
             }
         } catch (Exception e) { throw new RuntimeException("[DAO ERROR] countSearch() con SQL: " + sb, e); }
     }
+    
+    public int countPending() {
+        String sql = "SELECT COUNT(*) FROM events WHERE status='PENDIENTE'";
+        Conexion cx = new Conexion();
+
+        try (Connection cn = cx.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            return (rs.next() ? rs.getInt(1) : 0);
+
+        } catch (Exception e) {
+            throw new RuntimeException("[DAO ERROR] countPending() con SQL:\n" + sql + "\nCausa: " + e.getMessage(), e);
+        }
+    }    
+    
 
     /** Distintos géneros (para selects) */
     public List<String> listGenres() {
@@ -293,6 +339,38 @@ public class EventDAO {
             return ps.executeUpdate() > 0;
         } catch (Exception ex) { throw new RuntimeException("[DAO ERROR] toggleStatus(" + id + ") - No se pudo actualizar el estado.\n" + "Nuevo estado: " + to + "\n" + "SQL: " + sql + "\n" + "Causa: " + ex.getMessage(), ex ); }
     }
+    
+    public boolean aprobarEvento(int id, long adminId) {
+        String sql = "UPDATE events SET status = 'PUBLICADO', approved_by = ? WHERE id = ?";
+        Conexion cx = new Conexion();
+        try (Connection conn = cx.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, adminId);
+            ps.setInt(2, id);
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean rechazarEvento(int id, long adminId) {
+        String sql = "UPDATE events SET status = 'RECHAZADO', approved_by = ? WHERE id = ?";
+        Conexion cx = new Conexion();
+        try (Connection conn = cx.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, adminId);
+            ps.setInt(2, id);
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }    
 
     /* ============ Utilidades internas ============ */
 

@@ -6,7 +6,7 @@ import java.sql.Timestamp;
 public class Administrador implements Serializable {
 
     public enum Status { ACTIVO, INACTIVO}
-    private int id;
+    private long id;
     private String name;
     private String email;
     private String phone;
@@ -16,7 +16,7 @@ public class Administrador implements Serializable {
 
     // --- Getters y Setters ---
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
