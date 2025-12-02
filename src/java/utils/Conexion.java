@@ -113,6 +113,21 @@ public class Conexion {
     /**
      * Cierra la conexión viva.
      */
+    
+    public static Connection getConexion() {
+    try {
+        Conexion c = new Conexion();
+        if (!c.estaConectado()) {
+            System.out.println("No fue posible conectar a la base de datos.");
+            return null;
+        }
+        return c.getConnection();
+        } catch (Exception e) {
+            System.out.println("Error al obtener conexión: " + e.getMessage());
+            return null;
+        }
+    }
+    
     public void cerrarConexion() {
         try {
             if (conn != null && !conn.isClosed()) {

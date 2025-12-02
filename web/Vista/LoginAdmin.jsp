@@ -13,7 +13,7 @@
     <!-- Estilos adicionales -->
     <style>
         body {
-            background: url('../Images/Staff.jpg') no-repeat center center fixed;
+            background: url('../Imagenes/Staff.jpg') no-repeat center center fixed;
             background-size: cover;
             backdrop-filter: blur(5px);
         }
