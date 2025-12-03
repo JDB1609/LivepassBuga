@@ -34,17 +34,35 @@
     </a>
 
     <!-- NAV LINKS (DESKTOP) -->
-    <ul class="hidden md:flex gap-6 ml-auto text-sm">
-        <li><a href="PaginaPrincipal.jsp" class="hover:text-[#5469D5]">Inicio</a></li>
-        <li><a href="ExplorarEventos.jsp" class="hover:text-[#5469D5]">Buscar eventos</a></li>
-        <li><a href="Contacto.jsp" class="hover:text-[#5469D5]">Contacto</a></li>
+    <ul class="hidden md:flex gap-6 mx-auto text-sm">
+        <li>
+            <a href="ExplorarEventos.jsp" class="hover:text-[#5469D5]">Buscar eventos</a>
+        </li>
+        <li>
+            <a href="#contacto" class="hover:text-[#5469D5]">Contacto</a>
+        </li>
     </ul>
 
+
     <!-- BOTONES DERECHA -->
-    <div class="hidden md:flex gap-4 ml-6">
-        <a href="Login.jsp" class="btn-secondary px-4 py-1 rounded-lg block text-center">Ingresar</a>
-        <a href="Registro.jsp" class="btn-primary px-4 py-1 rounded-lg block text-center">Registrarse</a>
+    <div class="hidden md:flex ml-6 flex-col">
+      <!-- Fila: Ingresar + Registrarse -->
+      <div class="flex items-center gap-4">
+        <a href="Login.jsp" class="btn-secondary px-4 py-1 rounded-lg block text-center">
+          Ingresar
+        </a>
+        <a href="Registro.jsp" class="btn-primary px-4 py-1 rounded-lg block text-center">
+          Registrarse
+        </a>
+      </div>
+
+      <!-- Link debajo de Ingresar -->
+      <a href="LoginAdmin.jsp"
+         class="text-xs text-gray-400 hover:text-[#5469D5] mt-1">
+         Login Administrador
+      </a>
     </div>
+
 </nav>
 
 <!-- MENÚ LATERAL -->
@@ -254,7 +272,7 @@
 <!-- ===========================
             FOOTER
 =========================== -->
-<footer class="mt-24 px-14 py-16 bg-[#0A0C14] border-t border-[#1F2230]">
+<footer id="contacto" class="mt-24 px-14 py-16 bg-[#0A0C14] border-t border-[#1F2230]">
 
     <div class="grid grid-cols-4 gap-12">
 
@@ -427,21 +445,31 @@ function mostrarMensaje(tipo, texto) {
 }
 </script>
 
-
-
-
-
-
+<!-- Menú de hamburguesa -->
 <script>
-function toggleMenu() {
-    const menu = document.getElementById("sideMenu");
-    const burger = document.querySelector(".hamburger");
-    menu.classList.toggle("-translate-x-full");
-    burger.classList.toggle("active");
-}
+const sideMenu = document.getElementById("sideMenu");
+
+    function toggleMenu() {
+        if (sideMenu.classList.contains("-translate-x-full")) {
+            sideMenu.classList.remove("-translate-x-full");
+            sideMenu.classList.add("translate-x-0");
+        } else {
+            sideMenu.classList.add("-translate-x-full");
+            sideMenu.classList.remove("translate-x-0");
+        }
+    }
+
+    // Detectar clic fuera del menú
+    document.addEventListener("click", function(event) {
+        const isClickInside = sideMenu.contains(event.target);
+        const isHamburger = event.target.closest(".hamburger");
+
+        if (!isClickInside && !isHamburger && sideMenu.classList.contains("translate-x-0")) {
+            sideMenu.classList.add("-translate-x-full");
+            sideMenu.classList.remove("translate-x-0");
+        }
+    });
 </script>
-
-
 
 </body>
 </html>

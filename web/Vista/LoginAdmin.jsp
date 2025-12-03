@@ -73,7 +73,15 @@
             </div>
         <% } %>
 
-        <!-- FORMULARIO -->
+
+        <!-- Mensaje error -->
+        <% if (loginErr != null) { %>
+            <div class="mb-4 p-3 rounded-lg bg-red-700/40 border border-red-500">
+                <%= loginErr %>
+            </div>
+        <% } %>
+
+       <!-- FORMULARIO -->
         <form action="<%= request.getContextPath() %>/Control/ct_login_admin.jsp"
               method="post" class="space-y-5" accept-charset="UTF-8">
 
@@ -87,7 +95,7 @@
                        class="w-full px-4 py-3 rounded-lg input-style focus:outline-none" />
             </div>
 
-            <!-- Contraseña -->
+           <!-- Contraseña -->
             <div>
                 <input type="password"
                        name="pass"
@@ -96,19 +104,26 @@
                        class="w-full px-4 py-3 rounded-lg input-style focus:outline-none" />
             </div>
 
-            <!-- Botón -->
-            <button type="submit"
-                    class="w-full py-3 rounded-lg text-black font-semibold btn-login">
-                Entrar
-            </button>
+            <!-- Botones en la misma fila -->
+            <div class="flex gap-4">
+                <!-- Botón regresar -->
+                <a href="PaginaPrincipal.jsp"
+                   class="flex-1 py-3 rounded-lg border border-#00E0C6 text-white font-semibold text-center hover:bg-white hover:text-black transition">
+                   Menú Principal
+                </a>
 
+                <!-- Botón entrar -->
+                <button type="submit"
+                        class="flex-1 py-3 rounded-lg text-black font-semibold btn-login">
+                    Entrar
+                </button>
+            </div>
         </form>
-
         <p class="text-center text-white/70 mt-5 text-sm">
             Acceso exclusivo para administradores.
         </p>
-
     </div>
+
 
 </body>
 
