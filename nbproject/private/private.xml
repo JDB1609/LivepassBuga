@@ -3,10 +3,11 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/lenovo/Desktop/LivepassPagina%20Version%20funcional/LivepassPagina/web/Vista/PaginaPrincipal.jsp</file>
-            <file>file:/C:/Users/lenovo/Desktop/LivepassPagina%20Version%20funcional/LivepassPagina/web/Vista/Checkout.jsp</file>
-            <file>file:/C:/Users/lenovo/Desktop/LivepassPagina%20Version%20funcional/LivepassPagina/web/Vista/EventoDetalle.jsp</file>
-            <file>file:/C:/Users/lenovo/Desktop/LivepassPagina%20Version%20funcional/LivepassPagina/web/Vista/Registro.jsp</file>
+            <file>file:/C:/Users/lenovo/Desktop/LivepassBuga/web/Vista/PaginaPrincipal.jsp</file>
+            <file>file:/C:/Users/lenovo/Desktop/LivepassBuga/src/java/dao/SoporteDAO.java</file>
+            <file>file:/C:/Users/lenovo/Desktop/LivepassBuga/src/java/utils/SoporteMensaje.java</file>
+            <file>file:/C:/Users/lenovo/Desktop/LivepassBuga/src/java/servlet/SoporteServlet.java</file>
+            <file>file:/C:/Users/lenovo/Desktop/LivepassBuga/src/java/utils/Conexion.java</file>
         </group>
     </open-files>
 </project-private>

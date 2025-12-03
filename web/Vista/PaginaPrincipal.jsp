@@ -335,9 +335,7 @@
 
 
 
-<!-- ===========================
-     BOTÓN FLOTANTE SOPORTE
-=========================== -->
+<!-- BOTÓN SOPORTE -->
 <div id="btnSoporte"
      class="fixed bottom-6 right-6 bg-[#5469D5] text-white 
             w-14 h-14 rounded-full shadow-xl flex items-center justify-center 
@@ -346,38 +344,93 @@
     <img src="../Iconos/soporte.png" class="w-7 h-7">
 </div>
 
-
 <!-- VENTANA SOPORTE -->
 <div id="ventanaSoporte"
-    class="fixed bottom-24 right-6 w-80 bg-[#1A1B26] text-white p-5 
-           rounded-xl shadow-2xl hidden transition">
+     class="fixed bottom-24 right-6 w-80 bg-[#1A1B26] text-white p-5 
+            rounded-xl shadow-2xl hidden transition">
 
     <h3 class="text-lg font-semibold mb-3">Soporte</h3>
 
-    <form id="formSoporte" class="flex flex-col gap-3">
+    <!-- 🔥 ACTION CORRECTO -->
+    <form id="formSoporte" action="<%= request.getContextPath() + "/Soporte" %>" method="post" class="flex flex-col gap-3">
 
         <input type="text" name="nombre" placeholder="Tu nombre"
-               class="bg-[#0A0C14] p-2 rounded text-sm">
+               class="bg-[#0A0C14] p-2 rounded text-sm" required>
 
         <input type="email" name="email" placeholder="Correo"
-               class="bg-[#0A0C14] p-2 rounded text-sm">
+               class="bg-[#0A0C14] p-2 rounded text-sm" required>
 
         <textarea name="mensaje" placeholder="Describe tu problema"
-                  class="bg-[#0A0C14] p-2 rounded text-sm h-20 resize-none"></textarea>
+                  class="bg-[#0A0C14] p-2 rounded text-sm h-20 resize-none" required></textarea>
 
-        <button class="bg-[#5469D5] py-2 rounded font-semibold hover:opacity-90">
+        <button type="submit" class="bg-[#5469D5] py-2 rounded font-semibold hover:opacity-90">
             Enviar
         </button>
     </form>
 
-    <div id="mensajeExito" class="hidden mt-3"></div>
+    <div id="mensajeRespuesta" class="mt-3"></div>
 </div>
 
+<!-- SCRIPT MOSTRAR/OCULTAR -->
 <script>
 function toggleSoporte() {
     document.getElementById("ventanaSoporte").classList.toggle("hidden");
 }
 </script>
+
+<!-- SCRIPT ENVÍO AJAX -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("formSoporte");
+
+    form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        // Convertimos FormData a URLSearchParams
+        const datos = new URLSearchParams(new FormData(form));
+
+        try {
+            const response = await fetch(form.action, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: datos
+            });
+
+            const result = await response.json(); // el servlet devuelve JSON
+
+            mostrarMensaje(result.status, result.msg);
+
+            if (result.status === "ok") {
+                form.reset();
+            }
+
+        } catch (error) {
+            mostrarMensaje("error", "Hubo un error inesperado.");
+        }
+    });
+});
+
+function mostrarMensaje(tipo, texto) {
+    const contenedor = document.getElementById("mensajeRespuesta");
+    const color = tipo === "ok" ? "bg-green-600" : "bg-red-600";
+
+    contenedor.innerHTML =
+        '<div class="p-3 rounded text-white ' + color + '">' +
+        texto +
+        '</div>';
+
+    setTimeout(() => {
+        contenedor.innerHTML = "";
+    }, 3500);
+}
+</script>
+
+
+
+
+
 
 <script>
 function toggleMenu() {
@@ -387,6 +440,8 @@ function toggleMenu() {
     burger.classList.toggle("active");
 }
 </script>
+
+
 
 </body>
 </html>

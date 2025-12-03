@@ -1,7 +1,3 @@
- /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package dao;
 
 import utils.SoporteMensaje;
@@ -10,26 +6,24 @@ import java.sql.*;
 
 public class SoporteDAO {
 
-    private static final String INSERT = "INSERT INTO support (nombre, email, mensaje) VALUES (?, ?, ?)";
 
     public boolean guardar(SoporteMensaje mensaje) {
 
-        try (Connection con = Conexion.getConexion();
-             PreparedStatement ps = con.prepareStatement(INSERT)) {
+        String sql = "INSERT INTO support(nombre,email,mensaje) VALUES (?,?,?)";
 
-            // Seteamos parámetros
-            ps.setString(1, mensaje.getNombre());
-            ps.setString(2, mensaje.getEmail());
-            ps.setString(3, mensaje.getMensaje());
+    try (Connection con = Conexion.getConexion();
+         PreparedStatement ps = con.prepareStatement(sql)) {
 
-            // Ejecutamos
-            return ps.executeUpdate() > 0;
+        ps.setString(1, mensaje.getNombre());
+        ps.setString(2, mensaje.getEmail());
+        ps.setString(3, mensaje.getMensaje());
 
-        } catch (SQLException e) {
-            System.out.println("Error en SoporteDAO al guardar: " + e.getMessage());
-            return false;
-        }
+        return ps.executeUpdate() > 0;
+
+    } catch (Exception e) {
+        e.printStackTrace();  // 👈 importante para ver el error real en consola
+        return false;
+    }
+
     }
 }
-
-
