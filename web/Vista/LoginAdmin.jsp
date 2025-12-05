@@ -74,12 +74,7 @@
         <% } %>
 
 
-        <!-- Mensaje error -->
-        <% if (loginErr != null) { %>
-            <div class="mb-4 p-3 rounded-lg bg-red-700/40 border border-red-500">
-                <%= loginErr %>
-            </div>
-        <% } %>
+
 
        <!-- FORMULARIO -->
         <form action="<%= request.getContextPath() %>/Control/ct_login_admin.jsp"

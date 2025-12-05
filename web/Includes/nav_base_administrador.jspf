@@ -1,0 +1,64 @@
+<%@ page contentType="text/html; charset=UTF-8" %>
+<%
+  String __ctx = request.getContextPath();
+%>
+
+<style>
+  #admin-nav .bar{ height:64px; transition:height .22s ease, background .22s ease }
+  #admin-nav .nav-link{ position:relative; font-weight:700; color:rgba(255,255,255,.82) }
+  #admin-nav .nav-link:hover{ color:#fff }
+  #admin-nav .nav-link::after{
+    content:""; position:absolute; left:0; right:0; bottom:-6px; height:2px;
+    background:linear-gradient(90deg,#6c5ce7,#00d1b2); transform:scaleX(0);
+    transform-origin:left; transition:transform .25s ease;
+  }
+  #admin-nav .nav-link.is-active::after,
+  #admin-nav .nav-link:hover::after{ transform:scaleX(1) }
+</style>
+
+<header id="admin-nav" class="sticky top-0 z-40">
+  <div class="bar border-b border-white/10 backdrop-blur bg-[rgba(11,14,22,.72)]">
+    <div class="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+
+      <!-- LOGO -->
+      <a href="<%=__ctx%>/Vista/Admin/PanelAdmin.jsp"
+         class="flex items-center gap-2 font-extrabold tracking-tight text-white">
+        <span class="inline-block w-3 h-3 rounded-sm bg-[#00d1b2]"></span>
+        Livepass <span class="text-aqua">Admin</span>
+      </a>
+
+      <!-- LINKS -->
+      <nav class="flex items-center gap-6">
+        <a href="<%=__ctx%>/Vista/Admin/PanelAdmin.jsp" class="nav-link" data-nav="panel">Panel</a>
+        <a href="<%=__ctx%>/Vista/Admin/Administradores.jsp" class="nav-link" data-nav="admins">Administradores</a>
+        <a href="<%=__ctx%>/Vista/Admin/Clientes.jsp" class="nav-link" data-nav="clientes">Clientes</a>
+        <a href="<%=__ctx%>/Vista/Admin/Organizadores.jsp" class="nav-link" data-nav="orgs">Organizadores</a>
+        <a href="<%=__ctx%>/Vista/Admin/Eventos.jsp" class="nav-link" data-nav="eventos">Eventos</a>
+        <a href="<%=__ctx%>/Vista/Admin/Tickets.jsp" class="nav-link" data-nav="tickets">Tickets</a>
+
+        <!-- SALIR -->
+        <a href="<%=__ctx%>/Control/ct_logout_admin.jsp"
+           class="px-4 py-2 rounded-xl border border-white/20 hover:border-white/40">
+           Salir
+        </a>
+      </nav>
+
+    </div>
+  </div>
+</header>
+
+<script>
+  // Marca opción activa
+  (function(){
+    var p = location.pathname.toLowerCase();
+    document.querySelectorAll('#admin-nav [data-nav]').forEach(function(a){
+      var k = a.getAttribute('data-nav');
+      if (k==='panel'    && p.includes('paneladmin')) a.classList.add('is-active');
+      if (k==='admins'   && p.includes('administradores')) a.classList.add('is-active');
+      if (k==='clientes' && p.includes('clientes')) a.classList.add('is-active');
+      if (k==='orgs'     && p.includes('organizadores')) a.classList.add('is-active');
+      if (k==='eventos'  && p.includes('eventos')) a.classList.add('is-active');
+      if (k==='tickets'  && p.includes('tickets')) a.classList.add('is-active');
+    });
+  })();
+</script>

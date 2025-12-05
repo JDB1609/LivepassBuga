@@ -12,11 +12,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <%@ include file="../Includes/head_base.jspf" %>
+  <%@ include file="../Includes/head_base_administrador.jspf" %>
   <title>Crear Administrador — Livepass Buga</title>
 </head>
 <body class="text-white font-sans">
-  <%@ include file="../Includes/nav_base.jspf" %>
+  <%@ include file="../Includes/nav_base_administrador.jspf" %>
 
   <!-- Fondo animado -->
   <div id="bg-lights" class="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
