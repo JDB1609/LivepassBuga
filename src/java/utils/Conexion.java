@@ -80,54 +80,50 @@ public class Conexion {
     }
 
     /**
-     * Verifica la conexión y, si está cerrada, intenta reconectar.
+     * Verifica si HAY una conexión abierta (no reconecta aquí).
      */
     public boolean estaConectado() {
         try {
-            if (conn != null && !conn.isClosed()) {
-                return true;
-            }
-            return conectarMySQL();
+            return (conn != null && !conn.isClosed());
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
+
+    /**
+     * Devuelve una Connection válida.
+     * - Si está cerrada o no existe, intenta conectar.
+     * - Si falla, lanza RuntimeException (para que no tengas cn = null).
+     */
     public Connection getConnection() {
-    // asegura que la conexión esté abierta
-    if (!estaConectado()) return null; 
-    return conn;
+        try {
+            if (!estaConectado()) {
+                boolean ok = conectarMySQL();
+                if (!ok) {
+                    throw new SQLException("No se pudo conectar a MySQL: " + mensaje);
+                }
+            }
+            return conn;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error obteniendo conexión MySQL: " + e.getMessage(), e);
+        }
     }
 
     /**
-     * Devuelve una Connection válida (y se asegura de conectarla si hace falta).
-     * Útil si quieres usar esta clase como "factory" desde DAOs específicos.
+     * Método estático de compatibilidad:
+     * permite usar Conexion.getConexion() en código antiguo.
+     * Nunca devuelve null: lanza RuntimeException si falla.
      */
-    /*public Connection getConnection() throws SQLException {
-        if (!estaConectado()) {
-            throw new SQLException("No hay conexión a MySQL: " + getMensaje());
-        }
-        return this.conn;
-    }*/
+    public static Connection getConexion() {
+        Conexion c = new Conexion();
+        return c.getConnection();
+    }
 
     /**
      * Cierra la conexión viva.
      */
-    
-    public static Connection getConexion() {
-    try {
-        Conexion c = new Conexion();
-        if (!c.estaConectado()) {
-            System.out.println("No fue posible conectar a la base de datos.");
-            return null;
-        }
-        return c.getConnection();
-        } catch (Exception e) {
-            System.out.println("Error al obtener conexión: " + e.getMessage());
-            return null;
-        }
-    }
-    
     public void cerrarConexion() {
         try {
             if (conn != null && !conn.isClosed()) {
@@ -148,7 +144,8 @@ public class Conexion {
     public boolean insertar(String tabla, ArrayList<String> columnNames, ArrayList<Object> values) {
         PreparedStatement ps = null;
         try {
-            if (!estaConectado()) return false;
+            // aquí ya lanza excepción si no conecta
+            Connection c = getConnection();
 
             StringBuilder cols = new StringBuilder("(");
             for (int i = 0; i < columnNames.size(); i++) {
@@ -167,7 +164,7 @@ public class Conexion {
             String sql = "INSERT INTO " + tabla + " " + cols + " " + vals;
             System.out.println("[Conexion][INSERT] " + sql);
 
-            ps = conn.prepareStatement(sql);
+            ps = c.prepareStatement(sql);
             for (int i = 0; i < values.size(); i++) ps.setObject(i + 1, values.get(i));
 
             return ps.executeUpdate() > 0;
@@ -187,7 +184,7 @@ public class Conexion {
                               String condicionSQLTemplate, ArrayList<Object> condicionParams) {
         PreparedStatement ps = null;
         try {
-            if (!estaConectado()) return false;
+            Connection c = getConnection();
 
             StringBuilder sb = new StringBuilder("UPDATE ").append(tabla).append(" SET ");
             for (int i = 0; i < columnNames.size(); i++) {
@@ -200,7 +197,7 @@ public class Conexion {
             String sql = sb.append(";").toString();
             System.out.println("[Conexion][UPDATE] " + sql);
 
-            ps = conn.prepareStatement(sql);
+            ps = c.prepareStatement(sql);
 
             int idx = 1;
             for (Object v : values) ps.setObject(idx++, v);
@@ -223,12 +220,12 @@ public class Conexion {
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            if (!estaConectado()) return null;
+            Connection c = getConnection();
 
             String sql = "SELECT * FROM " + tabla + " WHERE " + columnaCondicion + " = ?;";
             System.out.println("[Conexion][SELECT 1] " + sql);
 
-            ps = conn.prepareStatement(sql);
+            ps = c.prepareStatement(sql);
             ps.setString(1, valorCondicion);
             rs = ps.executeQuery();
 
@@ -259,10 +256,10 @@ public class Conexion {
         String sql = "SELECT * FROM " + tabla + " WHERE estado = 1;";
         PreparedStatement ps = null; ResultSet rs = null;
         try {
-            if (!estaConectado()) return out;
+            Connection c = getConnection();
 
             System.out.println("[Conexion][SELECT activos] " + sql);
-            ps = conn.prepareStatement(sql);
+            ps = c.prepareStatement(sql);
             rs = ps.executeQuery();
 
             ResultSetMetaData md = rs.getMetaData();
@@ -289,77 +286,66 @@ public class Conexion {
     }
 
     public String[][] consultaMatriz(String sql, ArrayList<Object> params) {
-        PreparedStatement ps = null; ResultSet rs = null;
-        try {
-            if (!estaConectado()) return null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        Connection cn = getConnection();   // <- cn en vez de c
 
-            System.out.println("[Conexion][QUERY matriz] " + sql);
-            ps = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        System.out.println("[Conexion][QUERY matriz] " + sql);
+        ps = cn.prepareStatement(sql, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
-            if (params != null) for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
-
-            rs = ps.executeQuery();
-
-            int rows = 0;
-            if (rs.last()) { rows = rs.getRow(); rs.beforeFirst(); }
-            if (rows == 0) { mensaje = "Sin resultados"; return null; }
-
-            int cols = rs.getMetaData().getColumnCount();
-            String[][] data = new String[rows][cols];
-            int r = 0;
-            while (rs.next()) {
-                for (int c = 0; c < cols; c++) data[r][c] = rs.getString(c + 1);
-                r++;
+        if (params != null) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
             }
-            return data;
+        }
 
-        } catch (SQLException e) {
-            this.mensaje = "Error QUERY matriz: " + e.getMessage();
-            e.printStackTrace();
+        rs = ps.executeQuery();
+
+        int rows = 0;
+        if (rs.last()) {
+            rows = rs.getRow();
+            rs.beforeFirst();
+        }
+        if (rows == 0) {
+            mensaje = "Sin resultados";
             return null;
-
-        } finally {
-            try { if (rs != null) rs.close(); } catch (SQLException ignored) {}
-            try { if (ps != null) ps.close(); } catch (SQLException ignored) {}
-            cerrarConexion();
         }
-    }
 
-    public int contar(String tabla, String condicionSQL, ArrayList<Object> params) {
-        PreparedStatement ps = null; ResultSet rs = null;
-        try {
-            if (!estaConectado()) return -1;
-
-            String sql = "SELECT COUNT(*) FROM " + tabla + (condicionSQL!=null && !condicionSQL.isBlank() ? " WHERE " + condicionSQL : "");
-            System.out.println("[Conexion][COUNT] " + sql);
-
-            ps = conn.prepareStatement(sql);
-            if (params != null) for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
-
-            rs = ps.executeQuery();
-            return rs.next() ? rs.getInt(1) : 0;
-
-        } catch (SQLException e) {
-            this.mensaje = "Error COUNT en '" + tabla + "': " + e.getMessage();
-            e.printStackTrace();
-            return -1;
-
-        } finally {
-            try { if (rs != null) rs.close(); } catch (SQLException ignored) {}
-            try { if (ps != null) ps.close(); } catch (SQLException ignored) {}
-            cerrarConexion();
+        int cols = rs.getMetaData().getColumnCount();
+        String[][] data = new String[rows][cols];
+        int r = 0;
+        while (rs.next()) {
+            for (int col = 0; col < cols; col++) {  // <- col en vez de c
+                data[r][col] = rs.getString(col + 1);
+            }
+            r++;
         }
+        return data;
+
+    } catch (SQLException e) {
+        this.mensaje = "Error QUERY matriz: " + e.getMessage();
+        e.printStackTrace();
+        return null;
+
+    } finally {
+        try { if (rs != null) rs.close(); } catch (SQLException ignored) {}
+        try { if (ps != null) ps.close(); } catch (SQLException ignored) {}
+        cerrarConexion();
     }
+}
+
 
     public double sumar(String tabla, String campo, String condicionSQL, ArrayList<Object> params) {
         PreparedStatement ps = null; ResultSet rs = null;
         try {
-            if (!estaConectado()) return -1;
+            Connection c = getConnection();
 
-            String sql = "SELECT SUM(" + campo + ") FROM " + tabla + (condicionSQL!=null && !condicionSQL.isBlank() ? " WHERE " + condicionSQL : "");
+            String sql = "SELECT SUM(" + campo + ") FROM " + tabla
+                       + (condicionSQL != null && !condicionSQL.isBlank() ? " WHERE " + condicionSQL : "");
             System.out.println("[Conexion][SUM] " + sql);
 
-            ps = conn.prepareStatement(sql);
+            ps = c.prepareStatement(sql);
             if (params != null) for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
 
             rs = ps.executeQuery();
