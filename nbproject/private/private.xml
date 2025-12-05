@@ -3,11 +3,34 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/lenovo/Desktop/LivepassBuga/web/Vista/PaginaPrincipal.jsp</file>
-            <file>file:/C:/Users/lenovo/Desktop/LivepassBuga/src/java/dao/SoporteDAO.java</file>
-            <file>file:/C:/Users/lenovo/Desktop/LivepassBuga/src/java/utils/SoporteMensaje.java</file>
-            <file>file:/C:/Users/lenovo/Desktop/LivepassBuga/src/java/servlet/SoporteServlet.java</file>
-            <file>file:/C:/Users/lenovo/Desktop/LivepassBuga/src/java/utils/Conexion.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Includes/head_base.jspf</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Includes/nav_base.jspf</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/PaginaPrincipal.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/Login.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/DashboardOrganizador.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/EventoNuevo.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_event_create.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/EventosOrganizador.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_event_list.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_crear_administrador.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_event_delete.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/EventoEditar.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/ExplorarEventos.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/PagoSimulado.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/PagoResultado.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Styles/estilos.css</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/nbproject/build-impl.xml</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_PaginaPrincipal.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/SoporteMensaje.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/Ticket.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/User.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/dao/EventDAO.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/Mail.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/QrUtil.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/dao/LocalityDAO.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/Conexion.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/Event.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/Hash.java</file>
         </group>
     </open-files>
 </project-private>

@@ -5,62 +5,177 @@
   String  __name = (String)  session.getAttribute("userName");
   String  __ctx  = request.getContextPath();
   boolean __isOrg    = (__role != null && "ORGANIZADOR".equalsIgnoreCase(__role));
-  boolean __isClient = (__role != null && "CLIENTE".equalsIgnoreCase(__role)); // NEW
-  
+  boolean __isClient = (__role != null && "CLIENTE".equalsIgnoreCase(__role));
 %>
 
 <style>
   /* ===== NAVBAR ===== */
-  #lp-nav .bar{ height:64px; transition:height .22s ease, background .22s ease }
-  #lp-nav.nav-compact .bar{ height:56px }
-  #lp-nav .nav-link{ position:relative; font-weight:700; color:rgba(255,255,255,.82) }
-  #lp-nav .nav-link:hover{ color:#fff }
-  #lp-nav .nav-link::after{
-    content:""; position:absolute; left:0; right:0; bottom:-6px; height:2px;
-    background:linear-gradient(90deg,#6c5ce7,#00d1b2); transform:scaleX(0);
-    transform-origin:left; transition:transform .25s ease;
+  #lp-nav .bar{
+    height:64px;
+    transition:height .22s ease, background .22s ease, box-shadow .22s ease;
   }
-  #lp-nav .nav-link.is-active::after, #lp-nav .nav-link:hover::after{ transform:scaleX(1) }
+  #lp-nav.nav-compact .bar{
+    height:56px;
+    box-shadow:0 14px 40px rgba(0,0,0,.65);
+    background:linear-gradient(90deg,#050716,#070b1e);
+  }
+
+  #lp-nav .bar{
+    background:linear-gradient(90deg,#050716,#050816,#050716);
+  }
+
+  #lp-nav .nav-link{
+    position:relative;
+    font-weight:600;
+    font-size:.9rem;
+    color:rgba(248,250,252,.78);
+  }
+  #lp-nav .nav-link:hover{
+    color:#fff;
+  }
+  #lp-nav .nav-link::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:-6px;
+    height:2px;
+    background:linear-gradient(90deg,#5469D5,#00E0C6);
+    transform:scaleX(0);
+    transform-origin:left;
+    transition:transform .25s ease;
+  }
+  #lp-nav .nav-link.is-active::after,
+  #lp-nav .nav-link:hover::after{
+    transform:scaleX(1);
+  }
+
+  /* Logo imagen */
+  .brand-wrapper{
+    display:flex;
+    align-items:center;
+    gap:.55rem;
+  }
+  .brand-logo{
+    width:110px;
+    height:auto;
+    filter:drop-shadow(0 10px 25px rgba(0,0,0,.65));
+    transition:transform .18s ease, filter .18s ease;
+  }
+  .brand-wrapper:hover .brand-logo{
+    transform:translateY(-1px) scale(1.02);
+    filter:drop-shadow(0 16px 40px rgba(0,0,0,.85));
+  }
+
+  .brand-sub{
+    font-size:.68rem;
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    color:rgba(148,163,184,.85);
+  }
 
   /* Avatar */
-  .avatar{ width:28px;height:28px;border-radius:9999px;
-    background:linear-gradient(135deg,#6c5ce7,#00d1b2); display:inline-block;
-    box-shadow:0 0 0 2px rgba(255,255,255,.12) inset; }
+  .avatar{
+    width:28px;
+    height:28px;
+    border-radius:9999px;
+    background:linear-gradient(135deg,#5469D5,#00E0C6);
+    display:inline-block;
+    box-shadow:0 0 0 2px rgba(255,255,255,.12) inset;
+  }
 
   /* Dropdown */
-  .menu{ min-width:220px; transform-origin:top right; transition:opacity .18s ease, transform .18s ease }
-  .menu.hidden{ opacity:0; transform:scale(.98) }
+  .menu{
+    min-width:220px;
+    transform-origin:top right;
+    opacity:0;
+    transform:scale(.96);
+    pointer-events:none;
+    transition:opacity .18s ease, transform .18s ease;
+  }
+  .menu.open{
+    opacity:1;
+    transform:scale(1);
+    pointer-events:auto;
+  }
 
   /* ===== HAMBURGER ===== */
-  .hamb{ width:34px; height:34px; border-radius:12px; display:inline-grid; place-items:center;
-         border:1px solid rgba(255,255,255,.15); transition:border-color .2s }
-  .hamb:hover{ border-color:rgba(255,255,255,.3) }
-  .hamb i{ position:relative; width:18px; height:2px; background:#fff; display:block; transition:all .22s }
-  .hamb i::before,.hamb i::after{ content:""; position:absolute; left:0; right:0; height:2px; background:#fff; transition:transform .22s, top .22s, opacity .22s }
-  .hamb i::before{ top:-6px } .hamb i::after{ top:6px }
-  .hamb.is-open i{ background:transparent }
-  .hamb.is-open i::before{ top:0; transform:rotate(45deg) }
-  .hamb.is-open i::after{ top:0; transform:rotate(-45deg) }
-  .hamb:focus-visible{ outline:2px solid #6c5ce7; outline-offset:2px }
+  .hamb{
+    width:34px;
+    height:34px;
+    border-radius:12px;
+    display:inline-grid;
+    place-items:center;
+    border:1px solid rgba(255,255,255,.15);
+    transition:border-color .2s;
+  }
+  .hamb:hover{ border-color:rgba(255,255,255,.3); }
+  .hamb i{
+    position:relative;
+    width:18px;
+    height:2px;
+    background:#fff;
+    display:block;
+    transition:all .22s;
+  }
+  .hamb i::before,
+  .hamb i::after{
+    content:"";
+    position:absolute;
+    left:0; right:0;
+    height:2px;
+    background:#fff;
+    transition:transform .22s, top .22s, opacity .22s;
+  }
+  .hamb i::before{ top:-6px; }
+  .hamb i::after{ top:6px; }
+
+  .hamb.is-open i{
+    background:transparent;
+  }
+  .hamb.is-open i::before{
+    top:0;
+    transform:rotate(45deg);
+  }
+  .hamb.is-open i::after{
+    top:0;
+    transform:rotate(-45deg);
+  }
+  .hamb:focus-visible{
+    outline:2px solid #5469D5;
+    outline-offset:2px;
+  }
 
   /* Drawer */
   #drawer{ inset:0; }
-  #drawer .panel{ width:min(82vw, 320px); transform:translateX(-100%); transition:transform .25s ease }
-  #drawer.show .panel{ transform:none }
-  #drawer .backdrop{ backdrop-filter:blur(4px); background:rgba(11,14,22,.5); opacity:0; transition:opacity .2s ease }
-  #drawer.show .backdrop{ opacity:1 }
+  #drawer .panel{
+    width:min(82vw, 320px);
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+  }
+  #drawer.show .panel{ transform:none; }
+  #drawer .backdrop{
+    backdrop-filter:blur(4px);
+    background:rgba(10,12,20,.7);
+    opacity:0;
+    transition:opacity .2s ease;
+  }
+  #drawer.show .backdrop{ opacity:1; }
 </style>
 
 <header id="lp-nav" class="sticky top-0 z-40">
-  <div class="bar border-b border-white/10 backdrop-blur bg-[rgba(11,14,22,.72)]">
+  <div class="bar border-b border-white/10 backdrop-blur">
     <div class="max-w-6xl mx-auto px-5 h-full flex items-center">
       <!-- IZQUIERDA: Hamburguesa + Brand -->
       <div class="flex items-center gap-3">
-        <button id="hamb" class="md:hidden hamb" aria-label="Abrir menú" aria-controls="drawer" aria-expanded="false"><i></i></button>
+        <button id="hamb" class="md:hidden hamb" aria-label="Abrir menú" aria-controls="drawer" aria-expanded="false">
+          <i></i>
+        </button>
 
-        <a href="<%=__ctx%>/Vista/PaginaPrincipal.jsp" class="flex items-center gap-2 font-extrabold tracking-tight">
-          <span class="inline-block w-3 h-3 rounded-sm" style="background:#00d1b2"></span>
-          Livepass <span class="text-aqua">Buga</span>
+        <!-- LOGO IMAGEN (MISMO LOGO QUE EN LA PÁGINA PRINCIPAL) -->
+        <a href="<%=__ctx%>/Vista/PaginaPrincipal.jsp" class="brand-wrapper select-none">
+          <img src="<%=__ctx%>/Imagenes/Livepass Buga Logo.png"
+               alt="LivePassBuga"
+               class="brand-logo" draggable="false">
+          <span class="hidden sm:block brand-sub">Tickets &amp; eventos</span>
         </a>
       </div>
 
@@ -68,7 +183,7 @@
       <nav class="hidden md:flex items-center gap-6 mx-auto">
         <a href="<%=__ctx%>/Vista/ExplorarEventos.jsp" class="nav-link" data-nav="explorar">Explorar</a>
         <% if (__isClient) { %>
-          <a href="<%=__ctx%>/Vista/HomeCliente.jsp" class="nav-link" data-nav="homecli">Home</a> 
+          <a href="<%=__ctx%>/Vista/HomeCliente.jsp" class="nav-link" data-nav="homecli">Home</a>
         <% } %>
         <a href="<%=__ctx%>/Vista/PaginaPrincipal.jsp" class="nav-link" data-nav="inicio">Inicio</a>
       </nav>
@@ -76,29 +191,52 @@
       <!-- DERECHA: User / Auth -->
       <div class="hidden md:flex items-center gap-2">
         <% if (__uid == null) { %>
-          <a href="<%=__ctx%>/Vista/Login.jsp" class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30 font-bold transition">Ingresar</a>
-          <a href="<%=__ctx%>/Vista/Registro.jsp" class="btn-primary ripple">Crear cuenta</a>
+          <a href="<%=__ctx%>/Vista/Login.jsp"
+             class="px-4 py-2 rounded-xl border border-white/18 hover:border-white/35 text-sm font-semibold transition">
+            Ingresar
+          </a>
+          <a href="<%=__ctx%>/Vista/Registro.jsp"
+             class="btn-primary ripple text-sm">
+            Crear cuenta
+          </a>
         <% } else { %>
           <div class="relative">
-            <button id="userMenuBtn" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 hover:border-white/25"
+            <button id="userMenuBtn"
+                    class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 hover:border-white/25 text-sm"
                     aria-haspopup="menu" aria-expanded="false" aria-controls="userMenu">
               <span class="avatar" aria-hidden="true"></span>
-              <span class="font-semibold max-w-[160px] truncate"><%= (__name!=null? __name : "Usuario") %></span>
+              <span class="font-semibold max-w-[160px] truncate">
+                <%= (__name!=null? __name : "Usuario") %>
+              </span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="opacity-80" aria-hidden="true">
                 <path d="M7 10l5 5 5-5z"/>
               </svg>
             </button>
-            <div id="userMenu" class="menu absolute right-0 mt-2 rounded-xl border border-white/10 bg-[rgba(11,14,22,.98)] shadow-xl hidden" role="menu">
+            <div id="userMenu"
+                 class="menu hidden absolute right-0 mt-2 rounded-xl border border-white/10 bg-[rgba(10,12,20,.98)] shadow-xl"
+                 role="menu">
               <% if (__isClient) { %>
-                <a href="<%=__ctx%>/Vista/HomeCliente.jsp" class="block px-4 py-2 hover:bg-white/10" role="menuitem">Home cliente</a> <!-- NEW -->
+                <a href="<%=__ctx%>/Vista/HomeCliente.jsp" class="block px-4 py-2 hover:bg-white/10 text-sm" role="menuitem">
+                  Home cliente
+                </a>
               <% } %>
-              <a href="<%=__ctx%>/Vista/MisTickets.jsp" class="block px-4 py-2 hover:bg-white/10" role="menuitem">Mis tickets</a>
+              <a href="<%=__ctx%>/Vista/MisTickets.jsp" class="block px-4 py-2 hover:bg-white/10 text-sm" role="menuitem">
+                Mis tickets
+              </a>
               <% if (__isOrg) { %>
-                <a href="<%=__ctx%>/Vista/DashboardOrganizador.jsp" class="block px-4 py-2 hover:bg-white/10" role="menuitem">Panel organizador</a>
-                <a href="<%=__ctx%>/Vista/EventosOrganizador.jsp" class="block px-4 py-2 hover:bg:white/10 hover:bg-white/10" role="menuitem">Mis eventos</a>
+                <a href="<%=__ctx%>/Vista/DashboardOrganizador.jsp" class="block px-4 py-2 hover:bg-white/10 text-sm" role="menuitem">
+                  Panel organizador
+                </a>
+                <a href="<%=__ctx%>/Vista/EventosOrganizador.jsp" class="block px-4 py-2 hover:bg-white/10 text-sm" role="menuitem">
+                  Mis eventos
+                </a>
               <% } %>
-              <div class="h-px bg-white/10 my-1" aria-hidden="true"></div>
-              <a href="<%=__ctx%>/Control/ct_logout.jsp" class="block px-4 py-2 text-pink-200 hover:bg-white/10" role="menuitem">Cerrar sesión</a>
+              <div class="h-px bg-white/10 my-1"></div>
+              <a href="<%=__ctx%>/Control/ct_logout.jsp"
+                 class="block px-4 py-2 text-pink-200 hover:bg-white/10 text-sm"
+                 role="menuitem">
+                Cerrar sesión
+              </a>
             </div>
           </div>
         <% } %>
@@ -109,29 +247,53 @@
   <!-- Drawer móvil -->
   <div id="drawer" class="fixed inset-0 hidden">
     <div class="backdrop absolute inset-0"></div>
-    <div class="panel h-full bg-[#0b0e16] border-r border-white/10 shadow-2xl p-5 relative">
+    <div class="panel h-full bg-[#0A0C14] border-r border-white/10 shadow-2xl p-5 relative">
       <div class="flex items-center justify-between">
-        <div class="font-extrabold">Livepass <span class="text-aqua">Buga</span></div>
+        <a href="<%=__ctx%>/Vista/PaginaPrincipal.jsp" class="brand-wrapper">
+          <img src="<%=__ctx%>/Imagenes/Livepass Buga Logo.png"
+               alt="LivePassBuga"
+               class="brand-logo" draggable="false">
+        </a>
         <button id="drawerClose" class="hamb is-open" aria-label="Cerrar menú"><i></i></button>
       </div>
-      <nav class="mt-6 space-y-2">
-        <a href="<%=__ctx%>/Vista/ExplorarEventos.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">Explorar</a>
+
+      <nav class="mt-6 space-y-2 text-sm">
+        <a href="<%=__ctx%>/Vista/ExplorarEventos.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+          Explorar
+        </a>
         <% if (__isClient) { %>
-          <a href="<%=__ctx%>/Vista/HomeCliente.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">Home cliente</a> <!-- NEW -->
+          <a href="<%=__ctx%>/Vista/HomeCliente.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+            Home cliente
+          </a>
         <% } %>
-        <a href="<%=__ctx%>/Vista/PaginaPrincipal.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">Inicio</a>
+        <a href="<%=__ctx%>/Vista/PaginaPrincipal.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+          Inicio
+        </a>
         <div class="h-px bg-white/10 my-2"></div>
         <% if (__uid == null) { %>
-          <a href="<%=__ctx%>/Vista/Login.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">Ingresar</a>
-          <a href="<%=__ctx%>/Vista/Registro.jsp" class="block mt-2 btn-primary text-center">Crear cuenta</a>
+          <a href="<%=__ctx%>/Vista/Login.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+            Ingresar
+          </a>
+          <a href="<%=__ctx%>/Vista/Registro.jsp"
+             class="block mt-2 btn-primary text-center">
+            Crear cuenta
+          </a>
         <% } else { %>
-          <a href="<%=__ctx%>/Vista/MisTickets.jsp" class="block px-3 py-2 rounded-lg hover:bg:white/10 hover:bg-white/10">Mis tickets</a>
+          <a href="<%=__ctx%>/Vista/MisTickets.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+            Mis tickets
+          </a>
           <% if (__isOrg) { %>
-            <a href="<%=__ctx%>/Vista/DashboardOrganizador.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">Panel organizador</a>
-            <a href="<%=__ctx%>/Vista/EventosOrganizador.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">Mis eventos</a>
+            <a href="<%=__ctx%>/Vista/DashboardOrganizador.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+              Panel organizador
+            </a>
+            <a href="<%=__ctx%>/Vista/EventosOrganizador.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+              Mis eventos
+            </a>
           <% } %>
           <div class="h-px bg-white/10 my-2"></div>
-          <a href="<%=__ctx%>/Control/ct_logout.jsp" class="block px-3 py-2 rounded-lg text-pink-200 hover:bg-white/10">Cerrar sesión</a>
+          <a href="<%=__ctx%>/Control/ct_logout.jsp" class="block px-3 py-2 rounded-lg text-pink-200 hover:bg-white/10">
+            Cerrar sesión
+          </a>
         <% } %>
       </nav>
     </div>
@@ -146,7 +308,7 @@
       var key = a.getAttribute('data-nav');
       if (key==='explorar' && p.indexOf('/explorareventos')>-1) a.classList.add('is-active');
       if (key==='inicio'   && p.indexOf('/paginaprincipal')>-1) a.classList.add('is-active');
-      if (key==='homecli'  && p.indexOf('/homecliente')>-1)     a.classList.add('is-active'); // NEW
+      if (key==='homecli'  && p.indexOf('/homecliente')>-1)     a.classList.add('is-active');
     });
   })();
 
@@ -161,28 +323,43 @@
     });
   })();
 
-  // Dropdown usuario (click fuera / Escape)
+  // Dropdown usuario
   (function(){
-    var btn = document.getElementById('userMenuBtn');
+    var btn  = document.getElementById('userMenuBtn');
     var menu = document.getElementById('userMenu');
     if (!btn || !menu) return;
-    var show=false;
+    var open = false;
+
     function toggle(v){
-      show = (typeof v==='boolean') ? v : !show;
-      menu.classList.toggle('hidden', !show);
-      btn.setAttribute('aria-expanded', show);
-      menu.classList.toggle('opacity-0', !show);
+      open = (typeof v==='boolean') ? v : !open;
+      btn.setAttribute('aria-expanded', open);
+      if (open){
+        menu.classList.remove('hidden');
+        void menu.offsetWidth;
+        menu.classList.add('open');
+      } else {
+        menu.classList.remove('open');
+        setTimeout(function(){ menu.classList.add('hidden'); }, 180);
+      }
     }
-    btn.addEventListener('click', function(e){ e.stopPropagation(); toggle(); });
-    document.addEventListener('click', function(e){ if(show && !menu.contains(e.target)) toggle(false); });
-    document.addEventListener('keydown', function(e){ if(e.key==='Escape') toggle(false); });
+
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      toggle();
+    });
+    document.addEventListener('click', function(e){
+      if (open && !menu.contains(e.target) && e.target!==btn) toggle(false);
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key==='Escape') toggle(false);
+    });
   })();
 
-  // Drawer móvil con animación + bloqueo de scroll
+  // Drawer móvil
   (function(){
-    var hamb = document.getElementById('hamb');
+    var hamb   = document.getElementById('hamb');
     var drawer = document.getElementById('drawer');
-    var close = document.getElementById('drawerClose');
+    var close  = document.getElementById('drawerClose');
     if(!hamb || !drawer) return;
 
     function open(){
@@ -200,9 +377,16 @@
       document.body.style.overflow = '';
       setTimeout(function(){ drawer.classList.add('hidden'); }, 220);
     }
-    hamb.addEventListener('click', open);
+
+    hamb.addEventListener('click', function(){
+      if (drawer.classList.contains('show')) hide(); else open();
+    });
     close && close.addEventListener('click', hide);
-    drawer.addEventListener('click', function(e){ if(e.target.classList.contains('backdrop')) hide(); });
-    document.addEventListener('keydown', function(e){ if(e.key==='Escape') hide(); });
+    drawer.addEventListener('click', function(e){
+      if(e.target.classList.contains('backdrop')) hide();
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key==='Escape') hide();
+    });
   })();
 </script>

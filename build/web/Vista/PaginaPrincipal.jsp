@@ -1,6 +1,24 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="dao.EventDAO" %>
+<%@ page import="utils.Event" %>
+<%@ page import="java.util.List" %>
+
+<%
+    // ==========================
+    // CARGAR EVENTOS CARRUSEL DESDE BD
+    // ==========================
+    List<Event> featured = null;
+    try {
+        EventDAO dao = new EventDAO();
+        featured = dao.listFeatured(10); // hasta 10 eventos en el slider
+    } catch (Exception ex) {
+        ex.printStackTrace();
+    }
+%>
+
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>LivePassBuga - Página Principal</title>
@@ -8,469 +26,805 @@
     <!-- TAILWIND -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Archivos CSS -->
+    <!-- Archivos CSS generales -->
     <link rel="stylesheet" href="../Styles/estilos.css">
-    
-    <!-- Icono de buscar -->
+
+    <!-- Iconos Material -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
+    <style>
+        /* NAV más pro */
+        #lp-nav .nav-link{
+            position:relative;
+            font-weight:600;
+            font-size:.9rem;
+            color:rgba(248,250,252,.78);
+        }
+        #lp-nav .nav-link:hover{
+            color:#ffffff;
+        }
+        #lp-nav .nav-link::after{
+            content:"";
+            position:absolute;
+            left:0; right:0; bottom:-6px;
+            height:2px;
+            background:linear-gradient(90deg,#5469D5,#00E0C6);
+            transform:scaleX(0);
+            transform-origin:left;
+            transition:transform .25s ease;
+        }
+        #lp-nav .nav-link:hover::after{
+            transform:scaleX(1);
+        }
+
+        .brand-wrapper{
+            display:flex;
+            align-items:center;
+            gap:.6rem;
+        }
+        .brand-logo{
+            width:110px;
+            height:auto;
+            filter:drop-shadow(0 10px 25px rgba(0,0,0,.65));
+            transition:transform .18s ease, filter .18s ease;
+        }
+        .brand-wrapper:hover .brand-logo{
+            transform:translateY(-1px) scale(1.02);
+            filter:drop-shadow(0 18px 40px rgba(0,0,0,.9));
+        }
+        .brand-sub{
+            font-size:.68rem;
+            letter-spacing:.24em;
+            text-transform:uppercase;
+            color:rgba(148,163,184,.85);
+        }
+
+        /* Botones header */
+        .btn-outline{
+            border-radius:.75rem;
+            padding:.45rem 1.3rem;
+            border:1px solid rgba(0,224,198,.8);
+            color:#00E0C6;
+            font-weight:600;
+            font-size:.85rem;
+            transition:all .18s ease;
+        }
+        .btn-outline:hover{
+            background:#00E0C6;
+            color:#020617;
+            box-shadow:0 12px 30px rgba(0,224,198,.35);
+            transform:translateY(-1px);
+        }
+        .btn-solid{
+            border-radius:.75rem;
+            padding:.45rem 1.3rem;
+            background:#5469D5;
+            font-weight:600;
+            font-size:.85rem;
+            transition:all .18s ease;
+        }
+        .btn-solid:hover{
+            background:#4256c7;
+            box-shadow:0 12px 30px rgba(84,105,213,.4);
+            transform:translateY(-1px);
+        }
+
+        /* Scrollbar oculto */
+        .no-scrollbar::-webkit-scrollbar{
+            display:none;
+        }
+        .no-scrollbar{
+            -ms-overflow-style:none;
+            scrollbar-width:none;
+        }
+
+        /* FONDO CAMUFLADO: sin panel, sin borde, mismo bg que la página */
+        .card-carousel{
+            background:transparent;
+            border-radius:0;
+            border:none;
+            box-shadow:none;
+            padding:0;
+        }
+
+        /* ====== CARD COMERCIAL ====== */
+        .card-event{
+            position:relative;
+            min-width:260px;
+            max-width:260px;
+            border-radius:1.4rem;
+            overflow:hidden;
+            background:#0B0F1A;
+            padding:0;
+            cursor:pointer;
+            transition:transform .35s ease, box-shadow .35s ease, z-index .15s ease;
+            box-shadow:0 10px 25px rgba(0,0,0,.45);
+            z-index:1; /* base */
+        }
+        .card-event:hover{
+            transform:translateY(-8px) scale(1.06);
+            box-shadow:0 25px 60px rgba(0,0,0,.8);
+            z-index:50; /* por encima de todo lo demás */
+        }
+
+        .img-wrap{
+            position:relative;
+            height:180px;
+            overflow:hidden;
+        }
+        .img-wrap img{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+            transition:transform .45s ease;
+        }
+        .card-event:hover .img-wrap img{
+            transform:scale(1.12);
+        }
+
+        .badge-top{
+            position:absolute;
+            top:10px;
+            left:12px;
+            background:rgba(0,224,198,.20);
+            backdrop-filter:blur(6px);
+            padding:.25rem .65rem;
+            font-size:.65rem;
+            border-radius:.5rem;
+            letter-spacing:.15em;
+            text-transform:uppercase;
+            color:#00E0C6;
+            font-weight:600;
+        }
+
+        .card-gradient{
+            position:absolute;
+            bottom:0;
+            left:0;
+            width:100%;
+            height:50%;
+            background:linear-gradient(to top,rgba(0,0,0,.8),transparent);
+        }
+
+        .card-content{
+            padding:1rem 1rem 1.3rem 1rem;
+        }
+        .card-location{
+            font-size:.75rem;
+            color:#9ca3af;
+            text-transform:uppercase;
+            letter-spacing:.15em;
+            margin-bottom:.4rem;
+        }
+        .card-title{
+            font-size:1rem;
+            font-weight:700;
+            margin-bottom:.2rem;
+        }
+        .card-date{
+            font-size:.8rem;
+            color:#cbd5e1;
+        }
+        .card-price{
+            font-size:.85rem;
+            font-weight:600;
+            margin-top:.6rem;
+            color:#5469D5;
+        }
+
+        .buy-btn{
+            position:absolute;
+            bottom:16px;
+            right:16px;
+            padding:.45rem .9rem;
+            border-radius:999px;
+            font-size:.75rem;
+            font-weight:600;
+            background:linear-gradient(135deg,#5469D5,#00E0C6);
+            color:white;
+            opacity:0;
+            pointer-events:none;
+            transform:translateY(10px);
+            transition:all .35s ease;
+            text-decoration:none;
+        }
+        .card-event:hover .buy-btn{
+            opacity:1;
+            pointer-events:auto;
+            transform:translateY(0);
+        }
+
+        /* Botones flecha carrusel */
+        .arrow-btn{
+            width:34px;
+            height:34px;
+            border-radius:999px;
+            border:1px solid rgba(148,163,184,.45);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:18px;
+            background:radial-gradient(circle at top,rgba(15,23,42,1),rgba(15,23,42,.9));
+            cursor:pointer;
+            transition:background .18s ease, transform .18s ease, box-shadow .18s ease;
+        }
+        .arrow-btn:hover{
+            background:linear-gradient(135deg,#5469D5,#00E0C6);
+            box-shadow:0 16px 35px rgba(15,23,42,.9);
+            transform:translateY(-1px);
+        }
+
+        /* CLAVE: permitir que las cards salgan hacia arriba */
+        #carouselCards{
+            overflow-y:visible;
+        }
+
+        /* Secciones inferiores (info de interés) */
+        .section-title{
+            font-size:1.5rem;
+            font-weight:700;
+        }
+        .pill{
+            border-radius:999px;
+            padding:.3rem .9rem;
+            font-size:.7rem;
+            letter-spacing:.15em;
+            text-transform:uppercase;
+        }
+    </style>
 </head>
 
 <body class="bg-[#0A0C14] text-white">
 
-<!-- NAVBAR -->
-<nav class="w-full flex items-center justify-between px-6 py-3 bg-[#0A0C14] border-b border-[#1F2230]">
+<!-- ===========================
+     NAVBAR
+=========================== -->
+<header id="lp-nav" class="sticky top-0 z-30">
+    <div class="w-full border-b border-white/10 bg-[#050812]/95 backdrop-blur">
+        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
 
-    <!-- HAMBURGUESA SOLO PARA PLATAFORMAS MOVILES -->
-    <div class="hamburger cursor-pointer mr-4" onclick="toggleMenu()">
-        <span></span>
-        <span></span>
-        <span></span>
+            <!-- LOGO + subtítulo -->
+           <a href="PaginaPrincipal.jsp" class="brand-wrapper select-none">
+    <img src="../Imagenes/Livepass Buga Logo.png"
+         alt="LivePassBuga"
+         class="brand-logo"
+         draggable="false">
+    <span class="hidden sm:block brand-sub">Tickets &amp; eventos</span>
+</a>
+
+
+            <!-- MENÚ -->
+            <ul class="hidden md:flex gap-8 items-center text-sm font-medium">
+                <li><a href="#" class="nav-link">Inicio</a></li>
+                <li><a href="#" class="nav-link">Eventos</a></li>
+                <li><a href="#" class="nav-link">Categorías</a></li>
+                <li><a href="../Vista/Soporte.jsp" class="nav-link">Soporte</a></li>
+            </ul>
+
+           
+            <!-- BOTONES -->
+                <div class="hidden md:flex gap-3">
+                    <!-- Ingresar -->
+                    <a href="<%= request.getContextPath() %>/Vista/Login.jsp"
+                       class="btn-outline inline-flex items-center justify-center">
+                        Ingresar
+                    </a>
+
+                    <!-- Registrarse -->
+                    <a href="<%= request.getContextPath() %>/Vista/Registro.jsp"
+                       class="btn-solid inline-flex items-center justify-center">
+                        Registrarse
+                    </a>
+                </div> 
+
+        </div>
     </div>
+</header>
 
-    <!-- LOGO -->
-    <a href="PaginaPrincipal.jsp" class="flex items-center">
-        <img src="../Imagenes/Livepass Buga Logo.png" alt="LivePass" class="h-10">
-    </a>
-
-    <!-- NAV LINKS (DESKTOP) -->
-    <ul class="hidden md:flex gap-6 mx-auto text-sm">
-        <li>
-            <a href="ExplorarEventos.jsp" class="hover:text-[#5469D5]">Buscar eventos</a>
-        </li>
-        <li>
-            <a href="#contacto" class="hover:text-[#5469D5]">Contacto</a>
-        </li>
-    </ul>
-
-
-    <!-- BOTONES DERECHA -->
-    <div class="hidden md:flex ml-6 flex-col">
-      <!-- Fila: Ingresar + Registrarse -->
-      <div class="flex items-center gap-4">
-        <a href="Login.jsp" class="btn-secondary px-4 py-1 rounded-lg block text-center">
-          Ingresar
-        </a>
-        <a href="Registro.jsp" class="btn-primary px-4 py-1 rounded-lg block text-center">
-          Registrarse
-        </a>
-      </div>
-
-      <!-- Link debajo de Ingresar -->
-      <a href="LoginAdmin.jsp"
-         class="text-xs text-gray-400 hover:text-[#5469D5] mt-1">
-         Login Administrador
-      </a>
-    </div>
-
-</nav>
-
-<!-- MENÚ LATERAL -->
-<div id="sideMenu" 
-     class="side-menu fixed top-0 left-0 w-64 h-full bg-[#141622] shadow-xl 
-            transform -translate-x-full transition-transform duration-300 z-50">
-
-    <div class="p-5 border-b border-[#1F2230]">
-        <h3 class="font-bold text-lg">Menú</h3>
-    </div>
-
-    <ul class="p-5 space-y-4 text-sm">
-        <li><a href="PaginaPrincipal.jsp" class="hover:text-[#5469D5]">Inicio</a></li>
-        <li><a href="ExplorarEventos.jsp" class="hover:text-[#5469D5]">Buscar eventos</a></li>
-        <li><a href="Contacto.jsp" class="hover:text-[#5469D5]">Contacto</a></li>
-        <li class="pt-4 border-t border-[#1F2230]">
-            <a href="Login.jsp" class="hover:text-[#5469D5]">Ingresar</a>
-        </li>
-        <li>
-            <a href="Registro.jsp" class="hover:text-[#5469D5]">Registrarse</a>
-        </li>
-    </ul>
-</div>
 
 <!-- ===========================
      HERO SECTION
 =========================== -->
 <section class="relative w-full h-[450px] mt-2">
-    <img src="../Imagenes/ejemplo.png" class="w-full h-full object-cover opacity-60">
-    <img src="../Imagenes/Banner.jpg"  class="absolute top-0 left-0 w-full h-[450px] Sobject-cover opacity-90 pointer-events-none">
-
-    <div class="absolute top-20 left-10">
+    <!-- fondo principal -->
+    <img src="https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=1600"
+         class="w-full h-full object-cover opacity-60">
+  
+    <div class="absolute top-20 left-10 max-w-xl">
         <p class="text-sm" style="color:#00E0C6;">Plataforma moderna</p>
 
-        <h1 class="text-4xl font-bold w-[500px] leading-tight titulo">
+        <h1 class="text-4xl font-bold leading-tight titulo">
             Compra, gestiona y valida <span style="color:#5469D5">tickets con QR</span>
         </h1>
 
-        <p class="w-[450px] mt-2">
+        <p class="mt-2 text-sm md:text-base">
             Experiencia sin filas, validación instantánea y seguridad total para eventos.
         </p>
 
-         <!-- BARRA DE BÚSQUEDA BIEN UBICADA -->
+        <!-- BARRA DE BÚSQUEDA -->
         <div class="mt-6">
-            <div class="flex items-center bg-white rounded-md shadow-md px-3 py-2 w-[420px]">
+            <div class="flex items-center bg-white rounded-md shadow-md px-3 py-2 w-[320px] md:w-[420px]">
                 <span class="material-icons text-gray-500 mr-2">search</span>
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     placeholder="Buscar eventos"
                     class="w-full outline-none text-sm"
-                    style="color: #6D6E6E;"  <!-- color del texto al escribir en el buscador -->
-                />
+                    style="color:#6D6E6E;">
             </div>
         </div>
     </div>
 
-    <!-- Panel lateral -->
-    <div class="absolute right-10 top-8 w-[300px] p-4 rounded-xl shadow-xl card">
-        <img src="../Imagen/ejemplo.png" class="rounded-lg w-full h-[180px] object-cover">
+    <!-- PANEL LATERAL -->
+    <div class="absolute right-4 md:right-10 top-8 w-[280px] md:w-[300px] p-4 rounded-xl shadow-xl card bg-[#050816]/90 backdrop-blur">
+        <img src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=800"
+             class="rounded-lg w-full h-[180px] object-cover">
         <h2 class="mt-3 text-lg font-bold titulo">Próximo evento</h2>
-        <p class="text-sm">Nombre del evento</p>
+        <p class="text-sm">Line up sorpresa • Lago Calima</p>
         <p class="mt-1 font-semibold" style="color:#5469D5">$80.000 - $350.000</p>
 
-        <button class="btn-primary w-full mt-3 py-2 rounded-lg">Reservar</button>
-        <button class="w-full mt-2 text-sm btn-secondary py-2 rounded-lg">Ver Detalles</button>
-    </div>
-</section>
-
-<!-- ===========================
-     EVENTOS DESTACADOS
-=========================== -->
-<section class="px-10 mt-20">
-    <h2 class="text-2xl font-bold titulo">Eventos destacados</h2>
-    <p class="text-sm mb-6">Lo más popular de la semana</p>
-
-    <div class="grid grid-cols-4 gap-8">
-
-        <!-- EVENTO CARD 1 -->
-        <div class="bg-[#1A1B26] shadow-lg rounded-xl p-3 transition hover:-translate-y-1">
-            <img src="../Imagenes/evento1.jpg" class="rounded-lg w-full h-[200px] object-cover">
-            <p class="font-bold titulo mt-3">Concierto de Rock</p>
-            <p class="text-sm text-gray-300">12 Nov 2025 • Buga</p>
-            <p class="text-sm mt-1 font-semibold" style="color:#5469D5">$40.000 - $120.000</p>
-
-            <button class="btn-primary w-full mt-3 py-2 rounded-lg">Comprar</button>
-            <button class="btn-secondary w-full mt-2 text-sm py-2 rounded-lg">Detalles</button>
-        </div>
-
-        <!-- EVENTO CARD 2 -->
-        <div class="bg-[#1A1B26] shadow-lg rounded-xl p-3 transition hover:-translate-y-1">
-            <img src="../Imagenes/evento2.jpg" class="rounded-lg w-full h-[200px] object-cover">
-            <p class="font-bold titulo mt-3">Clásicos del Pop</p>
-            <p class="text-sm text-gray-300">30 Nov 2025 • Cali</p>
-            <p class="text-sm mt-1 font-semibold" style="color:#5469D5">$55.000 - $150.000</p>
-
-            <button class="btn-primary w-full mt-3 py-2 rounded-lg">Comprar</button>
-            <button class="btn-secondary w-full mt-2 text-sm py-2 rounded-lg">Detalles</button>
-        </div>
-
-        <!-- EVENTO CARD 3 -->
-        <div class="bg-[#1A1B26] shadow-lg rounded-xl p-3 transition hover:-translate-y-1">
-            <img src="../Imagenes/evento3.jpg" class="rounded-lg w-full h-[200px] object-cover">
-            <p class="font-bold titulo mt-3">Festival Electrónico</p>
-            <p class="text-sm text-gray-300">18 Dic 2025 • Palmira</p>
-            <p class="text-sm mt-1 font-semibold" style="color:#5469D5">$70.000 - $200.000</p>
-
-            <button class="btn-primary w-full mt-3 py-2 rounded-lg">Comprar</button>
-            <button class="btn-secondary w-full mt-2 text-sm py-2 rounded-lg">Detalles</button>
-        </div>
-
-        <!-- EVENTO CARD 4 -->
-        <div class="bg-[#1A1B26] shadow-lg rounded-xl p-3 transition hover:-translate-y-1">
-            <img src="../Imagenes/evento4.jpg" class="rounded-lg w-full h-[200px] object-cover">
-            <p class="font-bold titulo mt-3">Obra de Teatro</p>
-            <p class="text-sm text-gray-300">05 Ene 2026 • Buga</p>
-            <p class="text-sm mt-1 font-semibold" style="color:#5469D5">$30.000 - $80.000</p>
-
-            <button class="btn-primary w-full mt-3 py-2 rounded-lg">Comprar</button>
-            <button class="btn-secondary w-full mt-2 text-sm py-2 rounded-lg">Detalles</button>
-        </div>
-
+        <button class="btn-primary w-full mt-3 py-2 rounded-lg bg-[#5469D5]">Reservar</button>
+        <button class="btn-secondary w-full mt-2 text-sm py-2 rounded-lg border border-white/20">
+            Ver Detalles
+        </button>
     </div>
 </section>
 
 
 <!-- ===========================
-     CATEGORÍAS POPULARES
+     CARRUSEL DE EVENTOS (SLIDER)
 =========================== -->
-<section class="px-10 mt-20">
-    <h2 class="text-2xl font-bold titulo">Categorías populares</h2>
-    <p class="text-sm mb-6">Explora las diversas categorías</p>
-
-    <div class="grid grid-cols-3 gap-8">
-
-        <!-- Deportes -->
-        <div class="card-categoria p-6 rounded-xl flex gap-4">
-            <img src="../Iconos/trofeo.png" class="icono-evento">
-            <div>
-                <p class="titulo font-bold">Deportes</p>
-                <p class="text-sm">Partidos y torneos.</p>
-            </div>
-        </div>
-
-        <!-- Música -->
-        <div class="card-categoria p-6 rounded-xl flex gap-4">
-            <img src="../Iconos/musica.png" class="icono-evento">
-            <div>
-                <p class="titulo font-bold">Música</p>
-                <p class="text-sm">Conciertos y festivales.</p>
-            </div>
-        </div>
-
-        <!-- Conferencias -->
-        <div class="card-categoria p-6 rounded-xl flex gap-4">
-            <img src="../Iconos/microfono.png" class="icono-evento">
-            <div>
-                <p class="titulo font-bold">Conferencias</p>
-                <p class="text-sm">Tech, negocios y tendencias.</p>
-            </div>
-        </div>
-
-    </div>
-</section>
-
-
-
-<!-- ===========================
-     CARACTERÍSTICAS LIVEPASS
-=========================== -->
-<section class="px-10 mt-24">
-    <h2 class="text-2xl font-bold titulo">Características de LivePass Buga</h2>
-    <p class="text-sm mb-10">Miles de personas confían en nosotros para vivir las mejores experiencias</p>
-
-    <div class="grid grid-cols-4 gap-6">
-
-        <!-- Compra Segura -->
-        <div class="bg-[#1A1B26] p-6 rounded-xl text-center shadow-lg">
-            <img src="../Iconos/Seguridad.png" class="mx-auto w-10 mb-3">
-            <p class="font-bold titulo">Compra Segura</p>
-            <p class="text-sm">Tus datos protegidos con encriptación de nivel bancario.</p>
-        </div>
-
-        <!-- Tickets Digitales -->
-        <div class="bg-[#1A1B26] p-6 rounded-xl text-center shadow-lg">
-            <img src="../Iconos/Celular.png" class="mx-auto w-10 mb-3">
-            <p class="font-bold titulo">Tickets Digitales</p>
-            <p class="text-sm">Accede a tus tickets desde cualquier dispositivo móvil.</p>
-        </div>
-
-        <!-- Compra Instantánea -->
-        <div class="bg-[#1A1B26] p-6 rounded-xl text-center shadow-lg">
-            <img src="../Iconos/Rayo.png" class="mx-auto w-10 mb-3">
-            <p class="font-bold titulo">Compra Instantánea</p>
-            <p class="text-sm">Confirmación inmediata y acceso rápido a los eventos.</p>
-        </div>
-
-        <!-- Pagos Flexibles -->
-        <div class="bg-[#1A1B26] p-6 rounded-xl text-center shadow-lg">
-            <img src="../Iconos/Cartera.png" class="mx-auto w-10 mb-3">
-            <p class="font-bold titulo">Pagos Flexibles</p>
-            <p class="text-sm">Múltiples métodos y cuotas sin intereses.</p>
-        </div>
-
-    </div>
-</section>
-
-<!-- ===========================
-            FOOTER
-=========================== -->
-<footer id="contacto" class="mt-24 px-14 py-16 bg-[#0A0C14] border-t border-[#1F2230]">
-
-    <div class="grid grid-cols-4 gap-12">
-
-        <!-- LOGO + DESCRIPCIÓN -->
+<section class="mt-12 px-6 md:px-10 max-w-6xl mx-auto overflow-visible">
+    <div class="flex items-center justify-between mb-4 gap-4">
         <div>
-            <div class="flex items-center gap-2 mb-4">
-                <h2 class="titulo text-xl font-bold">LivePassBuga</h2>
-            </div>
+            <h2 class="text-2xl font-bold titulo">Popular esta semana</h2>
+            <p class="text-sm text-slate-300/80">Explora lo que más están comprando ahora</p>
+        </div>
 
-            <p class="text-sm text-gray-400 mb-5">
-                Tu plataforma de confianza para comprar tickets<br>
-                de los mejores eventos.
+        <div class="hidden md:flex items-center gap-2">
+            <button id="arrowPrev" class="arrow-btn">
+                <span class="material-icons text-sm">chevron_left</span>
+            </button>
+            <button id="arrowNext" class="arrow-btn">
+                <span class="material-icons text-sm">chevron_right</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="card-carousel">
+        <div id="carouselCards"
+             class="flex gap-4 md:gap-5 overflow-x-auto overflow-y-visible scroll-smooth no-scrollbar relative z-0">
+
+            <%
+                if (featured != null && !featured.isEmpty()) {
+                    java.time.format.DateTimeFormatter DT_FMT =
+                            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+                    java.text.NumberFormat NF_CO =
+                            java.text.NumberFormat.getCurrencyInstance(new java.util.Locale("es","CO"));
+
+                    for (Event ev : featured) {
+
+                        String image = (ev.getImage() != null && !ev.getImage().isEmpty())
+                                ? ev.getImage()
+                                // imagen por defecto desde internet
+                                : "https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=800";
+
+                        String ciudad = ev.getCity() != null ? ev.getCity() : "";
+                        String venue  = ev.getVenue() != null ? ev.getVenue() : "";
+                        String titulo = ev.getTitle() != null ? ev.getTitle() : "Evento sin título";
+
+                        String fecha  = "";
+                        if (ev.getDateTime() != null) {
+                            fecha = ev.getDateTime().format(DT_FMT);
+                        }
+
+                        String precio = "";
+                        if (ev.getPrice() != null) {
+                            precio = NF_CO.format(ev.getPrice());
+                        }
+
+                        String categoria = ev.getCategories() != null ? ev.getCategories() : "EVENTO";
+            %>
+
+            <article class="card-event">
+
+                <div class="img-wrap">
+                    <img src="<%= image %>"
+                         alt="<%= ev.getImageAlt() != null ? ev.getImageAlt() : titulo %>">
+                    <div class="badge-top"><%= categoria %></div>
+                    <div class="card-gradient"></div>
+                </div>
+
+                <div class="card-content">
+                    <p class="card-location">
+                        <%= ciudad %><% if (!ciudad.isEmpty() && !venue.isEmpty()) { %> • <% } %><%= venue %>
+                    </p>
+                    <h3 class="card-title"><%= titulo %></h3>
+                    <p class="card-date"><%= fecha %></p>
+
+                    <% if (!precio.isEmpty()) { %>
+                    <p class="card-price">Desde <%= precio %></p>
+                    <% } %>
+                </div>
+
+                <a href="EventoDetalle.jsp?id=<%= ev.getId() %>" class="buy-btn">
+                    Comprar
+                </a>
+
+            </article>
+
+            <%
+                    }
+                } else {
+            %>
+            <!-- Fallback si no hay eventos -->
+            <article class="card-event">
+                <div class="img-wrap">
+                    <img src="https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=800"
+                         alt="Sin eventos">
+                    <div class="card-gradient"></div>
+                </div>
+                <div class="card-content">
+                    <p class="card-location">Sin eventos</p>
+                    <h3 class="card-title">Aún no hay eventos publicados</h3>
+                    <p class="card-date">
+                        Cuando publiques tus eventos, aparecerán aquí automáticamente.
+                    </p>
+                </div>
+            </article>
+            <%
+                }
+            %>
+
+        </div>
+    </div>
+
+    <!-- Flechas móviles debajo -->
+    <div class="flex md:hidden justify-end gap-2 mt-3">
+        <button id="arrowPrevMobile" class="arrow-btn">
+            <span class="material-icons text-sm">chevron_left</span>
+        </button>
+        <button id="arrowNextMobile" class="arrow-btn">
+            <span class="material-icons text-sm">chevron_right</span>
+        </button>
+    </div>
+</section>
+
+
+<!-- ===========================
+     PRÓXIMOS LANZAMIENTOS
+=========================== -->
+<section class="mt-16 px-6 md:px-10 max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <p class="pill bg-[#111827] text-[#9ca3af] mb-2">Nuevos en LivePassBuga</p>
+            <h2 class="section-title titulo">Próximos lanzamientos</h2>
+            <p class="text-sm text-slate-300/80">
+                Asegura tu lugar antes de que se agoten los cupos.
+            </p>
+        </div>
+        <button class="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold
+                       bg-gradient-to-r from-[#5469D5] to-[#00E0C6]">
+            Ver todos los eventos
+            <span class="material-icons text-xs">arrow_forward</span>
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Card estática 1 -->
+        <div class="rounded-2xl overflow-hidden bg-[#050816] border border-white/5 shadow-xl">
+            <img src="https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                 class="w-full h-44 object-cover" alt="Concierto urbano">
+            <div class="p-4">
+                <p class="text-xs tracking-[0.2em] uppercase text-[#00E0C6] mb-1">
+                    Buga · Coliseo
+                </p>
+                <h3 class="font-semibold titulo mb-1">Urbano Night Fest</h3>
+                <p class="text-xs text-slate-300 mb-2">
+                    Line up con artistas urbanos invitados, visuales y show de luces.
+                </p>
+                <div class="flex items-center justify-between text-xs mt-2">
+                    <span class="font-semibold text-[#5469D5]">Desde $ 80.000</span>
+                    <button class="px-3 py-1 rounded-full bg-white text-black text-[11px] font-semibold">
+                        Comprar ahora
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card estática 2 -->
+        <div class="rounded-2xl overflow-hidden bg-[#050816] border border-white/5 shadow-xl">
+            <img src="https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                 class="w-full h-44 object-cover" alt="Festival al aire libre">
+            <div class="p-4">
+                <p class="text-xs tracking-[0.2em] uppercase text-[#00E0C6] mb-1">
+                    Lago Calima · Sunset
+                </p>
+                <h3 class="font-semibold titulo mb-1">Sunset Lake Festival</h3>
+                <p class="text-xs text-slate-300 mb-2">
+                    DJs, food trucks y cocteles frente al atardecer del lago.
+                </p>
+                <div class="flex items-center justify-between text-xs mt-2">
+                    <span class="font-semibold text-[#5469D5]">Desde $ 120.000</span>
+                    <button class="px-3 py-1 rounded-full bg-white text-black text-[11px] font-semibold">
+                        Comprar ahora
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card estática 3 -->
+        <div class="rounded-2xl overflow-hidden bg-[#050816] border border-white/5 shadow-xl">
+            <img src="https://images.pexels.com/photos/7131497/pexels-photo-7131497.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                 class="w-full h-44 object-cover" alt="Obra de teatro">
+            <div class="p-4">
+                <p class="text-xs tracking-[0.2em] uppercase text-[#00E0C6] mb-1">
+                    Teatro Municipal
+                </p>
+                <h3 class="font-semibold titulo mb-1">Noche de Stand-Up & Teatro</h3>
+                <p class="text-xs text-slate-300 mb-2">
+                    Comedia, storytelling y una puesta en escena íntima.
+                </p>
+                <div class="flex items-center justify-between text-xs mt-2">
+                    <span class="font-semibold text-[#5469D5]">Desde $ 60.000</span>
+                    <button class="px-3 py-1 rounded-full bg-white text-black text-[11px] font-semibold">
+                        Comprar ahora
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ===========================
+     BENEFICIOS / POR QUÉ COMPRAR AQUÍ
+=========================== -->
+<section class="mt-16 px-6 md:px-10 max-w-6xl mx-auto">
+    <div class="grid md:grid-cols-2 gap-10 items-center">
+        <div>
+            <p class="pill bg-[#111827] text-[#9ca3af] mb-3">Confianza para tus eventos</p>
+            <h2 class="section-title titulo mb-3">
+                Una plataforma pensada para organizadores y asistentes exigentes.
+            </h2>
+            <p class="text-sm text-slate-300 mb-4">
+                LivePassBuga centraliza la venta de tickets, el control de acceso y la
+                información de tus asistentes en una sola plataforma, segura y fácil de usar.
             </p>
 
-            <!-- ICONOS REDES -->
-            <div class="flex gap-4 mt-3">
-                <img src="../Iconos/facebook.png"  class="w-6 cursor-pointer hover:opacity-80">
-                <img src="../Iconos/twitter.png"   class="w-6 cursor-pointer hover:opacity-80">
-                <img src="../Iconos/instagram.png" class="w-6 cursor-pointer hover:opacity-80">
-                <img src="../Iconos/youtube.png"   class="w-6 cursor-pointer hover:opacity-80">
-            </div>
-        </div>
-
-        <!-- CATEGORÍAS -->
-        <div>
-            <h3 class="titulo text-lg font-semibold mb-3">Categorías</h3>
-            <ul class="space-y-2 text-gray-300 text-sm">
-                <li>Conciertos</li>
-                <li>Deportes</li>
-                <li>Teatro</li>
-                <li>Festivales</li>
-                <li>Comedia</li>
+            <ul class="space-y-3 text-sm text-slate-200">
+                <li class="flex gap-3">
+                    <span class="material-icons text-[#00E0C6] text-base mt-[2px]">verified</span>
+                    <div>
+                        <p class="font-semibold">Pagos verificados y seguros</p>
+                        <p class="text-xs text-slate-400">
+                            Integración con pasarelas de pago, validación QR y reportes en tiempo real.
+                        </p>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="material-icons text-[#00E0C6] text-base mt-[2px]">qr_code_scanner</span>
+                    <div>
+                        <p class="font-semibold">Check-in ultra rápido</p>
+                        <p class="text-xs text-slate-400">
+                            Escanea tickets desde cualquier dispositivo y controla el aforo de manera profesional.
+                        </p>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="material-icons text-[#00E0C6] text-base mt-[2px]">insights</span>
+                    <div>
+                        <p class="font-semibold">Datos que se convierten en ventas</p>
+                        <p class="text-xs text-slate-400">
+                            Estadísticas por tipo de entrada, ciudad, canal de venta y comportamiento de compra.
+                        </p>
+                    </div>
+                </li>
             </ul>
         </div>
 
-        <!-- AYUDA -->
+        <div class="grid grid-cols-2 gap-4">
+            <div class="row-span-2 rounded-2xl overflow-hidden bg-[#050816] border border-white/5">
+                <img src="https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                     class="w-full h-full object-cover"
+                     alt="Público disfrutando concierto">
+            </div>
+            <div class="rounded-2xl overflow-hidden bg-[#050816] border border-white/5">
+                <img src="https://images.pexels.com/photos/6898859/pexels-photo-6898859.jpeg?auto=compress&cs=tinysrgb&w=800"
+                     class="w-full h-32 object-cover"
+                     alt="Backstage producción">
+            </div>
+            <div class="rounded-2xl overflow-hidden bg-gradient-to-br from-[#111827] to-[#020617] border border-white/10 p-4 flex flex-col justify-between">
+                <div>
+                    <p class="text-xs text-[#9ca3af] mb-1">Organizadores</p>
+                    <p class="font-semibold titulo text-sm mb-2">Dashboard de ventas en vivo</p>
+                    <p class="text-xs text-slate-400">
+                        Ve cuántas entradas se han vendido por zona, canal y horario.
+                    </p>
+                </div>
+                <button class="mt-4 px-3 py-2 text-[11px] rounded-full border border-[#00E0C6] text-[#00E0C6]">
+                    Solicitar demo para organizadores
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ===========================
+     CATEGORÍAS DESTACADAS
+=========================== -->
+<section class="mt-16 px-6 md:px-10 max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
         <div>
-            <h3 class="titulo text-lg font-semibold mb-3">Ayuda</h3>
-            <ul class="space-y-2 text-gray-300 text-sm">
-                <li>Centro de ayuda</li>
-                <li>Cómo comprar</li>
-                <li>Términos y condiciones</li>
-                <li>Política de privacidad</li>
-                <li>Reembolsos</li>
-            </ul>
+            <p class="pill bg-[#111827] text-[#9ca3af] mb-2">Encuentra tu plan</p>
+            <h2 class="section-title titulo">Explora por categoría</h2>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Conciertos -->
+        <div class="relative overflow-hidden rounded-2xl bg-[#050816] border border-white/5 group">
+            <img src="https://images.pexels.com/photos/3374222/pexels-photo-3374222.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                 class="w-full h-40 object-cover opacity-80 group-hover:scale-105 transition-transform"
+                 alt="Conciertos">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div class="absolute bottom-3 left-3 right-3">
+                <p class="text-xs text-[#9ca3af] uppercase tracking-[0.2em]">Vive la música</p>
+                <p class="font-semibold titulo text-sm">Conciertos & Festivales</p>
+            </div>
         </div>
 
-        <!-- CONTACTO -->
-        <div>
-            <h3 class="titulo text-lg font-semibold mb-3">Contacto</h3>
-
-            <div class="flex items-center gap-3 mb-3">
-                <img src="../Iconos/email.png" class="w-5">
-                <p class="text-sm text-gray-300">info@Livepassbuga.com</p>
+        <!-- Electrónica -->
+        <div class="relative overflow-hidden rounded-2xl bg-[#050816] border border-white/5 group">
+            <img src="https://images.pexels.com/photos/1047440/pexels-photo-1047440.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                 class="w-full h-40 object-cover opacity-80 group-hover:scale-105 transition-transform"
+                 alt="Electrónica">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div class="absolute bottom-3 left-3 right-3">
+                <p class="text-xs text-[#9ca3af] uppercase tracking-[0.2em]">Atardeceres & clubs</p>
+                <p class="font-semibold titulo text-sm">Electrónica & Sunsets</p>
             </div>
+        </div>
 
-            <div class="flex items-center gap-3 mb-3">
-                <img src="../Iconos/telefono.png" class="w-5">
-                <p class="text-sm text-gray-300">+57 318 900 1234</p>
+        <!-- Familiar -->
+        <div class="relative overflow-hidden rounded-2xl bg-[#050816] border border-white/5 group">
+            <img src="https://images.pexels.com/photos/2253879/pexels-photo-2253879.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                 class="w-full h-40 object-cover opacity-80 group-hover:scale-105 transition-transform"
+                 alt="Eventos familiares">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div class="absolute bottom-3 left-3 right-3">
+                <p class="text-xs text-[#9ca3af] uppercase tracking-[0.2em]">Niños & familias</p>
+                <p class="font-semibold titulo text-sm">Eventos familiares</p>
             </div>
+        </div>
 
-            <div class="flex items-start gap-3">
-                <img src="../Iconos/mapa.png" class="w-5 mt-1">
-                <p class="text-sm text-gray-300">
-                    Calle Principal 123<br>
-                    28001 Guadalajara de Buga, Colombia
+        <!-- Corporativos -->
+        <div class="relative overflow-hidden rounded-2xl bg-[#050816] border border-white/5 group">
+            <img src="https://images.pexels.com/photos/1181395/pexels-photo-1181395.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                 class="w-full h-40 object-cover opacity-80 group-hover:scale-105 transition-transform"
+                 alt="Eventos corporativos">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div class="absolute bottom-3 left-3 right-3">
+                <p class="text-xs text-[#9ca3af] uppercase tracking-[0.2em]">Empresas & marcas</p>
+                <p class="font-semibold titulo text-sm">Corporativos & conferencias</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ===========================
+     CÓMO FUNCIONA + VIDEO
+=========================== -->
+<section class="mt-16 px-6 md:px-10 max-w-6xl mx-auto">
+    <div class="rounded-3xl border border-white/5 bg-gradient-to-r from-[#020617] via-[#020617] to-[#020617] p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center">
+        <div class="flex-1">
+            <p class="pill bg-[#111827] text-[#9ca3af] mb-3">Compra en 3 pasos</p>
+            <h2 class="section-title titulo mb-3">Así de fácil es asegurar tu entrada</h2>
+            <ol class="space-y-3 text-sm text-slate-200 list-decimal list-inside">
+                <li>
+                    <span class="font-semibold">Elige tu evento favorito.</span>
+                    <span class="text-slate-400 text-xs ml-1">
+                        Filtra por ciudad, fecha o categoría.
+                    </span>
+                </li>
+                <li>
+                    <span class="font-semibold">Selecciona la zona y cantidad de tickets.</span>
+                    <span class="text-slate-400 text-xs ml-1">
+                        VIP, general, boxes o mesas, todo en una misma interfaz.
+                    </span>
+                </li>
+                <li>
+                    <span class="font-semibold">Paga y recibe tu QR al instante.</span>
+                    <span class="text-slate-400 text-xs ml-1">
+                        Recíbelo en tu correo y preséntalo desde tu celular.
+                    </span>
+                </li>
+            </ol>
+        </div>
+
+        <div class="flex-1 w-full">
+            <!-- Video demo: cambia el link por tu video oficial -->
+            <div class="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                <iframe
+                    class="w-full h-full"
+                    src="https://www.youtube.com/embed/ScMzIvxBSi4"
+                    title="Video promocional LivePassBuga"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen>
+                </iframe>
+            </div>
+            <p class="mt-3 text-[11px] text-slate-400">
+                Reemplaza este video por el oficial de tu marca cuando lo tengas listo.
+            </p>
+        </div>
+    </div>
+</section>
+
+
+<!-- ===========================
+     CTA FINAL
+=========================== -->
+<section class="mt-16 mb-12 px-6 md:px-10 max-w-6xl mx-auto">
+    <div class="rounded-3xl bg-gradient-to-r from-[#5469D5] via-[#4f46e5] to-[#00E0C6] p-[1px]">
+        <div class="rounded-3xl bg-[#020617] px-6 py-6 md:px-10 md:py-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-[#a5b4fc] mb-1">
+                    Para organizadores y productores
+                </p>
+                <h2 class="section-title titulo mb-2">
+                    ¿Quieres vender tus próximos eventos con LivePassBuga?
+                </h2>
+                <p class="text-sm text-slate-200 max-w-xl">
+                    Centraliza tu boletería, controla el acceso con QR y ofrece una experiencia
+                    profesional a tu público desde el primer clic.
                 </p>
             </div>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button class="px-5 py-2 rounded-full bg-white text-black text-sm font-semibold">
+                    Agendar una demo
+                </button>
+                <button class="px-5 py-2 rounded-full border border-white/40 text-sm font-semibold">
+                    Ver planes para organizadores
+                </button>
+            </div>
         </div>
-
     </div>
-
-    <!-- COPYRIGHT -->
-    <div class="text-center text-gray-400 text-sm mt-10 pt-5 border-t border-[#1F2230]">
-        © 2025 LivePass Todos los derechos reservados.
-    </div>
-</footer>
+</section>
 
 
-
-<!-- BOTÓN SOPORTE -->
-<div id="btnSoporte"
-     class="fixed bottom-6 right-6 bg-[#5469D5] text-white 
-            w-14 h-14 rounded-full shadow-xl flex items-center justify-center 
-            cursor-pointer hover:scale-110 transition"
-     onclick="toggleSoporte()">
-    <img src="../Iconos/soporte.png" class="w-7 h-7">
-</div>
-
-<!-- VENTANA SOPORTE -->
-<div id="ventanaSoporte"
-     class="fixed bottom-24 right-6 w-80 bg-[#1A1B26] text-white p-5 
-            rounded-xl shadow-2xl hidden transition">
-
-    <h3 class="text-lg font-semibold mb-3">Soporte</h3>
-
-    <!-- 🔥 ACTION CORRECTO -->
-    <form id="formSoporte" action="<%= request.getContextPath() + "/Soporte" %>" method="post" class="flex flex-col gap-3">
-
-        <input type="text" name="nombre" placeholder="Tu nombre"
-               class="bg-[#0A0C14] p-2 rounded text-sm" required>
-
-        <input type="email" name="email" placeholder="Correo"
-               class="bg-[#0A0C14] p-2 rounded text-sm" required>
-
-        <textarea name="mensaje" placeholder="Describe tu problema"
-                  class="bg-[#0A0C14] p-2 rounded text-sm h-20 resize-none" required></textarea>
-
-        <button type="submit" class="bg-[#5469D5] py-2 rounded font-semibold hover:opacity-90">
-            Enviar
-        </button>
-    </form>
-
-    <div id="mensajeRespuesta" class="mt-3"></div>
-</div>
-
-<!-- SCRIPT MOSTRAR/OCULTAR -->
+<!-- ===========================
+     JS CARRUSEL
+=========================== -->
 <script>
-function toggleSoporte() {
-    document.getElementById("ventanaSoporte").classList.toggle("hidden");
-}
-</script>
+  (function(){
+      const track   = document.getElementById('carouselCards');
+      if (!track) return;
 
-<!-- SCRIPT ENVÍO AJAX -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("formSoporte");
+      const prev    = document.getElementById('arrowPrev');
+      const next    = document.getElementById('arrowNext');
+      const prevM   = document.getElementById('arrowPrevMobile');
+      const nextM   = document.getElementById('arrowNextMobile');
 
-    form.addEventListener("submit", async function (e) {
-        e.preventDefault();
+      function scrollByCards(direction){
+          const card = track.querySelector('.card-event');
+          if (!card) return;
+          const cardWidth = card.getBoundingClientRect().width + 16; // ancho + gap
+          track.scrollBy({
+              left: direction * cardWidth * 1.2,
+              behavior: 'smooth'
+          });
+      }
 
-        // Convertimos FormData a URLSearchParams
-        const datos = new URLSearchParams(new FormData(form));
-
-        try {
-            const response = await fetch(form.action, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: datos
-            });
-
-            const result = await response.json(); // el servlet devuelve JSON
-
-            mostrarMensaje(result.status, result.msg);
-
-            if (result.status === "ok") {
-                form.reset();
-            }
-
-        } catch (error) {
-            mostrarMensaje("error", "Hubo un error inesperado.");
-        }
-    });
-});
-
-function mostrarMensaje(tipo, texto) {
-    const contenedor = document.getElementById("mensajeRespuesta");
-    const color = tipo === "ok" ? "bg-green-600" : "bg-red-600";
-
-    contenedor.innerHTML =
-        '<div class="p-3 rounded text-white ' + color + '">' +
-        texto +
-        '</div>';
-
-    setTimeout(() => {
-        contenedor.innerHTML = "";
-    }, 3500);
-}
-</script>
-
-<!-- Menú de hamburguesa -->
-<script>
-const sideMenu = document.getElementById("sideMenu");
-
-    function toggleMenu() {
-        if (sideMenu.classList.contains("-translate-x-full")) {
-            sideMenu.classList.remove("-translate-x-full");
-            sideMenu.classList.add("translate-x-0");
-        } else {
-            sideMenu.classList.add("-translate-x-full");
-            sideMenu.classList.remove("translate-x-0");
-        }
-    }
-
-    // Detectar clic fuera del menú
-    document.addEventListener("click", function(event) {
-        const isClickInside = sideMenu.contains(event.target);
-        const isHamburger = event.target.closest(".hamburger");
-
-        if (!isClickInside && !isHamburger && sideMenu.classList.contains("translate-x-0")) {
-            sideMenu.classList.add("-translate-x-full");
-            sideMenu.classList.remove("translate-x-0");
-        }
-    });
+      [prev, prevM].forEach(btn => {
+          if (btn) btn.addEventListener('click', () => scrollByCards(-1));
+      });
+      [next, nextM].forEach(btn => {
+          if (btn) btn.addEventListener('click', () => scrollByCards(1));
+      });
+  })();
 </script>
 
 </body>
 </html>
-

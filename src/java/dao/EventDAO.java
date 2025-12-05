@@ -9,380 +9,416 @@ import java.math.BigDecimal;
 
 public class EventDAO {
 
-    /* ============ Mapper ============ */
-    public Event map(ResultSet rs) throws SQLException {
+    // ==========================
+    // SELECT BASE CON AGREGADOS
+    // ==========================
+    private static final String BASE_SELECT = """
+        SELECT
+            e.id,
+            e.organizer_id,
+            e.title,
+            e.venue,
+            e.genre,
+            e.city,
+            e.categories      AS category,
+            e.type_events     AS event_type,
+            e.text_acces      AS image_alt,
+            e.date_time,
+            e.description,
+            e.image,
+            e.status,
+
+            COALESCE(SUM(tt.capacity), 0)  AS capacity_total,
+            COALESCE(SUM(t.qty), 0)        AS sold_total,
+            COALESCE(MIN(tt.price), 0)     AS base_price
+
+        FROM events e
+        LEFT JOIN ticket_types tt ON tt.id_event = e.id
+        LEFT JOIN tickets      t  ON t.event_id  = e.id
+    """;
+
+    // ==========================
+    // MAPPER
+    // ==========================
+    private Event map(ResultSet rs) throws SQLException {
         Event e = new Event();
-        
-        try {e.setId(rs.getInt("id"));} catch (SQLException ignore) {}
 
-        try { e.setOrganizerId((Integer) rs.getObject("organizer_id")); } catch (SQLException ignore) {}
+        e.setId(rs.getInt("id"));
 
-        try {e.setTitle(rs.getString("title")); } catch (SQLException ignore) {}
-        try {e.setVenue(rs.getString("venue")); } catch (SQLException ignore) {}
-        try { e.setGenre(rs.getString("genre")); } catch (SQLException ignore) {}
-        try { e.setCity(rs.getString("city")); }  catch (SQLException ignore) {}
+        long org = rs.getLong("organizer_id");
+        if (!rs.wasNull()) e.setOrganizerId(org);
 
-        Timestamp ts = null;
-        try { ts = rs.getTimestamp("date_time"); } catch (SQLException ignore) {}
+        e.setTitle(rs.getString("title"));
+        e.setVenue(rs.getString("venue"));
+        e.setGenre(rs.getString("genre"));
+        e.setCity(rs.getString("city"));
+        e.setCategories(rs.getString("category"));
+        e.setEventType(rs.getString("event_type"));
+        e.setImageAlt(rs.getString("image_alt"));
+
+        Timestamp ts = rs.getTimestamp("date_time");
         if (ts != null) e.setDateTime(ts.toLocalDateTime());
 
-        e.setCapacity(safeInt(rs, "capacity"));
-        e.setSold(safeInt(rs, "sold"));
+        e.setCapacity(rs.getInt("capacity_total"));
+        e.setSold(rs.getInt("sold_total"));
+        e.setPrice(rs.getBigDecimal("base_price"));
 
-        try { e.setStatus(rs.getString("status")); } catch (SQLException ignore) {}
+        e.setDescription(rs.getString("description"));
+        e.setImage(rs.getString("image"));
+        e.setStatus(rs.getString("status"));   // setter convierte a enum internamente
 
-        try { e.setPrice(rs.getBigDecimal("price")); } catch (SQLException ignore) {}
-
-        try { e.setDescription(rs.getString("description")); } catch (SQLException ignore) {}
-        try { e.setImage(rs.getString("image")); } catch (SQLException ignore) {}
-        try {
-            Object obj = rs.getObject("created_by");
-            if (obj != null) e.setApproved_By(Long.valueOf(obj.toString()));
-        } catch (SQLException ignore) {}
-        
         return e;
     }
 
-    private int safeInt(ResultSet rs, String col) {
-        try { return rs.getInt(col); } catch (SQLException e) { return 0; }
-    }
-
-    /* ============ Listas públicas / búsquedas ============ */
-
-    /** Próximos publicados, ordenados por vendidos y fecha (para home) */
-    public List<Event> listFeatured(int limit) {
-        String sql = """
-            SELECT * FROM events
-            WHERE status='PUBLICADO' AND date_time >= NOW()
-            ORDER BY sold DESC, date_time ASC
-            LIMIT ?
-        """;
-        List<Event> out = new ArrayList<>();
-        Conexion cx = new Conexion();
-        try (Connection cn = cx.getConnection();
-             PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setInt(1, Math.max(1, limit));
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) out.add(map(rs));
-            }
-        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] listFeatured(limit=" + limit + ") con SQL:\n" + sql + "\nCausa: " + e.getMessage(), e); }
-        return out;
-    }
-
-    public List<Event> listPendingPaged(int limit, int offset) {
-        String sql = """
-            SELECT * FROM events
-            WHERE status='PENDIENTE'
-            ORDER BY date_time ASC
-            LIMIT ? OFFSET ?
-        """;
-
-        List<Event> out = new ArrayList<>();
-        Conexion cx = new Conexion();
-
-        try (Connection cn = cx.getConnection();
-             PreparedStatement ps = cn.prepareStatement(sql)) {
-
-            ps.setInt(1, limit);
-            ps.setInt(2, offset);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) out.add(map(rs));
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException("[DAO ERROR] listPendingPaged(limit="+limit+", offset="+offset+") con SQL:\n" + sql + "\nCausa: " + e.getMessage(), e);
+    // ==========================
+    // BIND DINÁMICO
+    // ==========================
+    private void bind(PreparedStatement ps, List<Object> params) throws SQLException {
+        int i = 1;
+        for (Object o : params) {
+            if (o instanceof Integer)          ps.setInt(i++, (Integer) o);
+            else if (o instanceof Long)        ps.setLong(i++, (Long) o);
+            else if (o instanceof BigDecimal)  ps.setBigDecimal(i++, (BigDecimal) o);
+            else                               ps.setObject(i++, o);
         }
-
-        return out;
     }
-    
-    
-    
-    /** Buscador de ExplorarEventos.jsp con filtros y paginación */
-    public List<Event> search(String q, String genre, String city,
-                              BigDecimal pmin, BigDecimal pmax,
-                              String order, int page, int pageSize) {
-        StringBuilder sb = new StringBuilder(
-            "SELECT * FROM events WHERE status='PUBLICADO' AND date_time >= NOW()"
-        );
-        List<Object> p = new ArrayList<>();
 
-        if (q != null && !q.isBlank()) {
-            sb.append(" AND (title LIKE ? OR venue LIKE ?)");
-            String like = "%" + q.trim() + "%";
-            p.add(like); p.add(like);
+    // ==========================
+    // STATUS JAVA (enum) → BD
+    // ==========================
+    private String toDbStatus(Event.Status st) {
+        if (st == null) return "BORRADOR";
+
+        switch (st) {
+            case PUBLICADO:
+                return "PUBLICADO";
+            case FINALIZADO:
+                return "REALIZADO";   // como definiste en la BD
+            case PENDIENTE:
+                return "PENDIENTE";
+            default:
+                return "BORRADOR";
         }
-        if (genre != null && !genre.isBlank()) { sb.append(" AND genre = ?"); p.add(genre); }
-        if (city  != null && !city.isBlank())  { sb.append(" AND city  = ?"); p.add(city); }
-        if (pmin  != null) { sb.append(" AND price >= ?"); p.add(pmin); }
-        if (pmax  != null) { sb.append(" AND price <= ?"); p.add(pmax); }
-
-        sb.append(" ORDER BY ");
-        if ("price_asc".equalsIgnoreCase(order)) sb.append("price ASC");
-        else if ("price_desc".equalsIgnoreCase(order)) sb.append("price DESC");
-        else sb.append("date_time ASC");
-
-        sb.append(" LIMIT ? OFFSET ?");
-        int offset = Math.max(0, (Math.max(1, page) - 1) * Math.max(1, pageSize));
-        p.add(Math.max(1, pageSize));
-        p.add(offset);
-
-        List<Event> out = new ArrayList<>();
-        Conexion cx = new Conexion();
-        try (Connection cn = cx.getConnection();
-             PreparedStatement ps = cn.prepareStatement(sb.toString())) {
-            bind(ps, p);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) out.add(map(rs));
-            }
-        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] search() con SQL: "+ sb ,e); }
-        return out;
     }
 
-    /** Total para la paginación del buscador */
-    public int countSearch(String q, String genre, String city,
-                           BigDecimal pmin, BigDecimal pmax) {
-        StringBuilder sb = new StringBuilder(
-            "SELECT COUNT(*) FROM events WHERE status='PUBLICADO' AND date_time >= NOW()"
-        );
-        List<Object> p = new ArrayList<>();
-
-        if (q != null && !q.isBlank()) {
-            sb.append(" AND (title LIKE ? OR venue LIKE ?)");
-            String like = "%" + q.trim() + "%";
-            p.add(like); p.add(like);
-        }
-        if (genre != null && !genre.isBlank()) { sb.append(" AND genre = ?"); p.add(genre); }
-        if (city  != null && !city.isBlank())  { sb.append(" AND city  = ?"); p.add(city); }
-        if (pmin  != null) { sb.append(" AND price >= ?"); p.add(pmin); }
-        if (pmax  != null) { sb.append(" AND price <= ?"); p.add(pmax); }
-
-        Conexion cx = new Conexion();
-        try (Connection cn = cx.getConnection();
-             PreparedStatement ps = cn.prepareStatement(sb.toString())) {
-            bind(ps, p);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getInt(1) : 0;
-            }
-        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] countSearch() con SQL: " + sb, e); }
-    }
-    
-    public int countPending() {
-        String sql = "SELECT COUNT(*) FROM events WHERE status='PENDIENTE'";
-        Conexion cx = new Conexion();
-
-        try (Connection cn = cx.getConnection();
-             PreparedStatement ps = cn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            return (rs.next() ? rs.getInt(1) : 0);
-
-        } catch (Exception e) {
-            throw new RuntimeException("[DAO ERROR] countPending() con SQL:\n" + sql + "\nCausa: " + e.getMessage(), e);
-        }
-    }    
-    
-
-    /** Distintos géneros (para selects) */
-    public List<String> listGenres() {
-        String sql = "SELECT DISTINCT genre FROM events WHERE genre IS NOT NULL AND genre<>'' ORDER BY genre";
-        List<String> out = new ArrayList<>();
-        Conexion cx = new Conexion();
-        try (Connection cn = cx.getConnection();
-             PreparedStatement ps = cn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) out.add(rs.getString(1));
-        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] listGenres() - No se pudieron obtener los géneros.\n" + "SQL: " + sql + "\n" + "Causa: " + e.getMessage(), e); }
-        return out;
-    }
-
-    /** Distintas ciudades (para selects) */
-    public List<String> listCities() {
-        String sql = "SELECT DISTINCT city FROM events WHERE city IS NOT NULL AND city<>'' ORDER BY city";
-        List<String> out = new ArrayList<>();
-        Conexion cx = new Conexion();
-        try (Connection cn = cx.getConnection();
-             PreparedStatement ps = cn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) out.add(rs.getString(1));
-        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] listCities() - No se pudieron obtener las ciudades.\n" + "SQL: " + sql + "\n" + "Causa: " + e.getMessage(), e); }
-        return out;
-    }
-
-    /* ============ CRUD organizador ============ */
+    // ================= LISTADO ORGANIZADOR =================
 
     public List<Event> listByOrganizer(int organizerId, String q, String status) {
-        StringBuilder sb = new StringBuilder("SELECT * FROM events WHERE organizer_id=?");
-        List<Object> p = new ArrayList<>(); p.add(organizerId);
 
-        if (status!=null && !status.isBlank()) { sb.append(" AND status=?"); p.add(status.toUpperCase()); }
-        if (q!=null && !q.isBlank()) {
-            sb.append(" AND (title LIKE ? OR venue LIKE ?)");
-            String like = "%"+q.trim()+"%"; p.add(like); p.add(like);
-        }
-        sb.append(" ORDER BY date_time DESC");
+        StringBuilder sb = new StringBuilder(BASE_SELECT);
+        sb.append(" WHERE e.organizer_id = ?");
+
+        List<Object> params = new ArrayList<>();
+        params.add(organizerId);
+
+        sb.append(" GROUP BY e.id ORDER BY e.date_time DESC");
 
         List<Event> out = new ArrayList<>();
-        Conexion cx = new Conexion();
-        try (Connection cn = cx.getConnection();
+
+        try (Connection cn = new Conexion().getConnection();
              PreparedStatement ps = cn.prepareStatement(sb.toString())) {
-            bind(ps, p);
-            try (ResultSet rs = ps.executeQuery()) { while (rs.next()) out.add(map(rs)); }
-        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] listByOrganizer() - No se pudieron obtener los eventos\n" + "SQL: " + sb + "\n" + "Parámetros: " + p + "\n" + "Causa: " + e.getMessage(), e); }
+
+            bind(ps, params);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(map(rs));
+                }
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error listByOrganizer", e);
+        }
+
         return out;
     }
 
-    public Optional<Event> findById(int id) {
-        String sql = "SELECT * FROM events WHERE id=?";
-        Conexion cx = new Conexion();
-        try (Connection cn = cx.getConnection();
-             PreparedStatement ps = cn.prepareStatement(sql)) {
+    // =============== BUSCAR EVENTO POR ID + ORGANIZADOR =================
+
+    public Optional<Event> findByIdAndOrganizer(int id, int organizerId) {
+        StringBuilder sb = new StringBuilder(BASE_SELECT);
+        sb.append(" WHERE e.id = ? AND e.organizer_id = ? ");
+        sb.append(" GROUP BY e.id ");
+
+        try (Connection cn = new Conexion().getConnection();
+             PreparedStatement ps = cn.prepareStatement(sb.toString())) {
+
             ps.setInt(1, id);
+            ps.setInt(2, organizerId);
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(map(rs));
+                if (rs.next()) {
+                    return Optional.of(map(rs));
+                }
             }
-        } catch (Exception e) { throw new RuntimeException("[DAO ERROR] findById(" + id + ") - No se pudo obtener el evento.\n" + "SQL: " + sql + "\n" + "Causa: " + e.getMessage(), e ); }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error findByIdAndOrganizer", e);
+        }
+
         return Optional.empty();
     }
 
+    // ================= CREAR EVENTO =================
+
     public int create(Event e) {
+
         String sql = """
-            INSERT INTO events(organizer_id, title, venue, genre, city, date_time,
-                               capacity, sold, status, price, description, image)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO events(
+                organizer_id,
+                title,
+                categories,
+                genre,
+                type_events,
+                venue,
+                city,
+                date_time,
+                status,
+                description,
+                image,
+                text_acces
+            )
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
         """;
-        Conexion cx = new Conexion();
-        try (Connection cn = cx.getConnection();
+
+        try (Connection cn = new Conexion().getConnection();
              PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            if (e.getOrganizerId()!=null) ps.setInt(1, e.getOrganizerId());
-            else ps.setNull(1, Types.INTEGER);
-
+            ps.setLong(1, e.getOrganizerId());
             ps.setString(2, e.getTitle());
-            ps.setString(3, e.getVenue());
+            ps.setString(3, e.getCategories());
             ps.setString(4, e.getGenre());
-            ps.setString(5, e.getCity());
+            ps.setString(5, e.getEventType());
+            ps.setString(6, e.getVenue());
+            ps.setString(7, e.getCity());
 
-            if (e.getDateTime()!=null) ps.setTimestamp(6, Timestamp.valueOf(e.getDateTime()));
-            else ps.setNull(6, Types.TIMESTAMP);
+            if (e.getDateTime() != null) {
+                ps.setTimestamp(8, Timestamp.valueOf(e.getDateTime()));
+            } else {
+                ps.setNull(8, Types.TIMESTAMP);
+            }
 
-            ps.setInt(7, e.getCapacity());
-            ps.setInt(8, e.getSold());
-            ps.setString(9, String.valueOf(e.getStatus()));
-            ps.setBigDecimal(10, e.getPriceValue());
-            ps.setString(11, e.getDescription());
-            ps.setString(12, e.getImage());
+            ps.setString(9, toDbStatus(e.getStatus()));
+            ps.setString(10, e.getDescription());
+            ps.setString(11, e.getImage());
+            ps.setString(12, e.getImageAlt()); // text_acces
+
             ps.executeUpdate();
-            try (ResultSet rs = ps.getGeneratedKeys()) { if (rs.next()) return rs.getInt(1); }
-        } catch (Exception ex) { throw new RuntimeException("[DAO ERROR] create(Event) - No se pudo crear el evento.\n" + "SQL: " + sql + "\n" + "Causa: " + ex.getMessage(), ex); }
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Error create Event", ex);
+        }
+
         return 0;
     }
 
-    /** FIX: ahora también actualiza 'sold' */
-    public boolean update(Event e) {
+    // ================= ZONAS / AFOROS =================
+
+    public void insertZone(int eventId, String name, int capacity, BigDecimal price) {
+
         String sql = """
-          UPDATE events
-          SET title=?, venue=?, genre=?, city=?, date_time=?, capacity=?, sold=?, status=?, price=?, description=?, image=?
-          WHERE id=? AND organizer_id=?
+            INSERT INTO ticket_types (name, id_event, capacity, price)
+            VALUES (?,?,?,?)
         """;
-        Conexion cx = new Conexion();
-        try (Connection cn = cx.getConnection();
+
+        try (Connection cn = new Conexion().getConnection();
              PreparedStatement ps = cn.prepareStatement(sql)) {
 
-            ps.setString(1, e.getTitle());
-            ps.setString(2, e.getVenue());
-            ps.setString(3, e.getGenre());
-            ps.setString(4, e.getCity());
+            ps.setString(1, name);
+            ps.setInt(2, eventId);
+            ps.setInt(3, capacity);
 
-            if (e.getDateTime()!=null) ps.setTimestamp(5, Timestamp.valueOf(e.getDateTime()));
-            else ps.setNull(5, Types.TIMESTAMP);
+            long priceValue = 0L;
+            if (price != null) {
+                priceValue = price.longValue();   // tu columna es BIGINT
+            }
+            ps.setLong(4, priceValue);
 
-            ps.setInt(6, e.getCapacity());
-            ps.setInt(7, e.getSold()); // <-- importante
-            ps.setString(8, String.valueOf(e.getStatus()));
-            ps.setBigDecimal(9, e.getPriceValue());
+            System.out.println("[insertZone] eventId=" + eventId +
+                    ", name=" + name +
+                    ", cap=" + capacity +
+                    ", price=" + priceValue);
 
+            ps.executeUpdate();
 
-            ps.setString(10, e.getDescription());
-            ps.setString(11, e.getImage());            
-            
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error insertZone", e);
+        }
+    }
+    // ================= ACTUALIZAR EVENTO =================
+
+    public void update(Event e, int organizerId) {
+
+        String sql = """
+            UPDATE events
+            SET
+                title       = ?,
+                categories  = ?,
+                genre       = ?,
+                type_events = ?,
+                venue       = ?,
+                city        = ?,
+                date_time   = ?,
+                status      = ?,
+                description = ?,
+                image       = ?,
+                text_acces  = ?
+            WHERE id = ? AND organizer_id = ?
+        """;
+
+        try (Connection cn = new Conexion().getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setString(1,  e.getTitle());
+            ps.setString(2,  e.getCategories());
+            ps.setString(3,  e.getGenre());
+            ps.setString(4,  e.getEventType());
+            ps.setString(5,  e.getVenue());
+            ps.setString(6,  e.getCity());
+
+            if (e.getDateTime() != null) {
+                ps.setTimestamp(7, Timestamp.valueOf(e.getDateTime()));
+            } else {
+                ps.setNull(7, Types.TIMESTAMP);
+            }
+
+            ps.setString(8,  toDbStatus(e.getStatus()));
+            ps.setString(9,  e.getDescription());
+            ps.setString(10, e.getImage());
+            ps.setString(11, e.getImageAlt());
+
             ps.setInt(12, e.getId());
-            if (e.getOrganizerId()!=null) ps.setInt(11, e.getOrganizerId());
-            else ps.setNull(13, Types.INTEGER);
+            ps.setInt(13, organizerId);
 
-            return ps.executeUpdate() > 0;
-        } catch (Exception ex) { throw new RuntimeException("[DAO ERROR] update(Event) - No se pudo actualizar el evento.\n" + "SQL: " + sql + "\n" + "Causa: " + ex.getMessage(), ex); }
+            int rows = ps.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException(
+                    "No se actualizó ningún evento (id=" + e.getId() +
+                    ", organizer=" + organizerId + ")"
+                );
+            }
+
+        } catch (Exception ex) {
+            throw new RuntimeException("Error update Event", ex);
+        }
     }
 
-    public boolean delete(int id, int organizerId) {
-        String sql = "DELETE FROM events WHERE id=? AND organizer_id=?";
-        Conexion cx = new Conexion();
-        try (Connection cn = cx.getConnection();
+    // ================= ELIMINAR EVENTO =================
+
+    public boolean delete(int eventId, int organizerId) {
+
+        String sql = "DELETE FROM events WHERE id = ? AND organizer_id = ?";
+
+        try (Connection cn = new Conexion().getConnection();
              PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setInt(1, id);
+
+            ps.setInt(1, eventId);
             ps.setInt(2, organizerId);
-            return ps.executeUpdate() > 0;
-        } catch (Exception ex) { throw new RuntimeException("[DAO ERROR] delete(" + id + ", organizer=" + organizerId + ") - No se pudo eliminar el evento.\n" + "SQL: " + sql + "\n" + "Causa: " + ex.getMessage(), ex); }
-    }
 
-    public boolean toggleStatus(int id, int organizerId, String toStatus) {
-        String to = (toStatus!=null ? toStatus.toUpperCase() : "BORRADOR");
-        if (!List.of("PUBLICADO","BORRADOR","FINALIZADO","PENDIENTE").contains(to)) to = "BORRADOR";
-        String sql = "UPDATE events SET status=? WHERE id=? AND organizer_id=?";
-        Conexion cx = new Conexion();
-        try (Connection cn = cx.getConnection();
-             PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setString(1, to);
-            ps.setInt(2, id);
-            ps.setInt(3, organizerId);
-            return ps.executeUpdate() > 0;
-        } catch (Exception ex) { throw new RuntimeException("[DAO ERROR] toggleStatus(" + id + ") - No se pudo actualizar el estado.\n" + "Nuevo estado: " + to + "\n" + "SQL: " + sql + "\n" + "Causa: " + ex.getMessage(), ex ); }
+            int rows = ps.executeUpdate();
+
+            if (rows == 0) {
+                System.out.println("[EventDAO.delete] No se encontró evento " +
+                                   eventId + " para organizer " + organizerId);
+                return false;
+            }
+
+            System.out.println("[EventDAO.delete] Evento " + eventId +
+                               " borrado por organizer " + organizerId);
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error delete Event", e);
+        }
     }
     
-    public boolean aprobarEvento(int id, long adminId) {
-        String sql = "UPDATE events SET status = 'PUBLICADO', approved_by = ? WHERE id = ?";
-        Conexion cx = new Conexion();
-        try (Connection conn = cx.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+    // =============== LISTADO PARA HOME / CARRUSEL =================
 
-            ps.setLong(1, adminId);
-            ps.setInt(2, id);
-            return ps.executeUpdate() > 0;
+/**
+ * Lista eventos PUBLICADOS para mostrar en el home (carrusel).
+ * Ordenados por más vendidos y fecha más próxima.
+ */
+    public List<Event> listFeatured(int limit) {
+
+        StringBuilder sb = new StringBuilder(BASE_SELECT);
+        sb.append(" WHERE e.status = 'PUBLICADO' ");
+        sb.append(" GROUP BY e.id ");
+        sb.append(" ORDER BY sold_total DESC, e.date_time ASC ");
+
+        if (limit > 0) {
+            sb.append(" LIMIT ? ");
+        }
+
+        List<Event> out = new ArrayList<>();
+
+        try (Connection cn = new Conexion().getConnection();
+             PreparedStatement ps = cn.prepareStatement(sb.toString())) {
+
+            if (limit > 0) {
+                ps.setInt(1, limit);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(map(rs));
+                }
+            }
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            throw new RuntimeException("Error listFeatured", e);
         }
+
+        return out;
     }
 
-    public boolean rechazarEvento(int id, long adminId) {
-        String sql = "UPDATE events SET status = 'RECHAZADO', approved_by = ? WHERE id = ?";
-        Conexion cx = new Conexion();
-        try (Connection conn = cx.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setLong(1, adminId);
-            ps.setInt(2, id);
-            return ps.executeUpdate() > 0;
+        // =============== LISTADO PARA HOME / POPULARES =================
+
+    /**
+     * Lista eventos PUBLICADOS para el home (carrusel "Popular esta semana").
+     * Orden: primero los más vendidos y luego por fecha más próxima.
+     */
+    public List<Event> listPopular(int limit) {
+
+        StringBuilder sb = new StringBuilder(BASE_SELECT);
+        sb.append(" WHERE e.status = ? ");          // solo PUBLICADO
+        sb.append(" GROUP BY e.id ");
+        sb.append(" ORDER BY sold_total DESC, e.date_time ASC ");
+        if (limit > 0) {
+            sb.append(" LIMIT ? ");
+        }
+
+        List<Object> params = new ArrayList<>();
+        params.add("PUBLICADO");
+        if (limit > 0) {
+            params.add(limit);
+        }
+
+        List<Event> out = new ArrayList<>();
+
+        try (Connection cn = new Conexion().getConnection();
+             PreparedStatement ps = cn.prepareStatement(sb.toString())) {
+
+            bind(ps, params);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(map(rs));
+                }
+            }
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            throw new RuntimeException("Error listPopular", e);
         }
-    }    
 
-    /* ============ Utilidades internas ============ */
-
-    /** Enlaza parámetros con sus tipos */
-    private void bind(PreparedStatement ps, List<Object> params) throws SQLException {
-        int idx = 1;
-        for (Object o : params) {
-            if (o instanceof Integer i)            ps.setInt(idx++, i);
-            else if (o instanceof Long l)          ps.setLong(idx++, l);
-            else if (o instanceof BigDecimal bd)   ps.setBigDecimal(idx++, bd);
-            else if (o instanceof Timestamp t)     ps.setTimestamp(idx++, t);
-            else                                    ps.setObject(idx++, o);
-        }
+        return out;
     }
+
 }
