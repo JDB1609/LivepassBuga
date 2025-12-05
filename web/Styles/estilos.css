@@ -1,0 +1,215 @@
+/* ============================ TIPOGRAFÍAS ============================ */
+@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;600;700;800&family=Source+Sans+Pro:wght@300;400;600&display=swap');
+
+body {
+    font-family: 'Source Sans Pro', sans-serif;
+    background-color: #0A0C14;  /* FONDO PRINCIPAL */
+    color: #FFFFFF;
+    margin: 0;
+    padding: 0;
+}
+
+/* Títulos usan Fira Sans (Clase base que ya tenías) */
+.titulo {
+    font-family: 'Fira Sans', sans-serif;
+}
+
+/* ================================================= */
+/* NUEVOS ESTILOS FUTURISTAS/COMERCIALES */
+/* ================================================= */
+
+/* Efecto de texto con gradiente (usado para los títulos principales) */
+.titulo-gradiente {
+    font-family: 'Fira Sans', sans-serif;
+    font-weight: 800; /* Asegura que el gradiente se vea bien */
+    background-image: linear-gradient(to right, #00E0C6, #5469D5);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent; /* Fallback */
+}
+
+/* Efecto Hover para las Tarjetas de Eventos (simula brillo NFT) */
+.card-evento-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.card-evento-hover:hover {
+    transform: translateY(-4px);
+    /* Sombra mixta de los dos colores principales (azul y cian) */
+    box-shadow: 0 10px 30px rgba(84, 105, 213, 0.35), 0 0 15px rgba(0, 224, 198, 0.2);
+    border-color: rgba(84, 105, 213, 0.5); /* Borde sutil al hacer hover */
+}
+
+/* Efecto de Brillo para el Botón Principal (usado para la compra) */
+.btn-primary-glow {
+    transition: background-color 0.3s, box-shadow 0.3s ease-in-out;
+    background-color: #5469D5;
+    box-shadow: 0 4px 15px rgba(84, 105, 213, 0.4);
+    color: #FFFFFF; /* Asegurar color de texto */
+}
+
+.btn-primary-glow:hover {
+    background-color: #6A7CDA;
+    box-shadow: 0 6px 20px rgba(84, 105, 213, 0.6);
+}
+
+/* ============================ NAVBAR ============================ */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: #12141F;  /* NAVBAR OSCURO */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid #1F212C;
+}
+
+.nav-links li a {
+    text-decoration: none;
+    color: #E0E0E0;    /* Texto claro */
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-links li a:hover {
+    color: #5469D5;   /* Color acento */
+}
+
+/* ============================ HAMBURGUESA ============================ */
+.hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.hamburger span {
+    width: 25px;
+    height: 3px;
+    background: white;
+    border-radius: 5px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Animación cuando está activo */
+.hamburger.active span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+.hamburger.active span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+}
+
+/* ============================ MENÚ LATERAL ============================ */
+.side-menu {
+    width: 250px;
+    position: fixed;
+    top: 0;
+    left: -250px;
+    height: 100vh;
+    background-color: #1A1B26;
+    transition: left 0.3s ease-in-out;
+}
+
+.side-menu.open {
+    left: 0;
+}
+
+.side-menu ul {
+    list-style: none;
+    padding-left: 25px;
+    padding-top: 20px;
+}
+
+.side-menu ul li {
+    margin-bottom: 20px;
+}
+
+.side-menu ul li a {
+    text-decoration: none;
+    color: #E0E0E0;
+    font-size: 18px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.side-menu ul li a:hover {
+    color: #00E0C6;
+}
+
+/* ============================ BOTONES ============================ */
+.btn-primary {
+    background-color: #5469D5;
+    color: #FFFFFF;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+}
+
+.btn-secondary {
+    background-color: #1A1B26;
+    color: #FFFFFF;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.btn-secondary:hover {
+    background-color: #1F2230;
+    color: #00E0C6; /* Dar un toque de acento */
+}
+
+/* ============================ TARJETAS / CARDS ============================ */
+.card {
+    background-color: transparent;
+    border-radius: 12px;
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+.evento-card {
+    transition: transform 0.25s ease, box-shadow 0.3s ease;
+}
+
+.evento-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilo para las tarjetas de Categorías (mejorado para el hover) */
+.card-categoria {
+    background-color: #1A1B26;
+    border-radius: 12px;
+    transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+    border: 1px solid #1A1B26;
+}
+
+.card-categoria:hover {
+    background-color: #1F2230;
+    border-color: #00E0C6;
+    box-shadow: 0 0 15px rgba(0, 224, 198, 0.2);
+}
+
+/* Íconos */
+.icono-evento {
+    width: 40px;
+    height: 40px;
+}
+
+/* ============================ ANIMACIONES ============================ */
+/* Animación suave para el mensaje de éxito */
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.mensaje-exito {
+    animation: fadeInScale 0.3s ease-out;
+}

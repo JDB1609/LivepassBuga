@@ -1,0 +1,452 @@
+<%@ page contentType="text/html; charset=UTF-8" language="java" %>
+<%
+  Integer __uid  = (Integer) session.getAttribute("userId");
+  String  __role = (String) session.getAttribute("role");
+  String  __name = (String) session.getAttribute("userName");
+  String  __ctx  = request.getContextPath();
+  boolean __isOrg    = (__role != null && "ORGANIZADOR".equalsIgnoreCase(__role));
+  boolean __isClient = (__role != null && "CLIENTE".equalsIgnoreCase(__role));
+%>
+
+<style>
+  /* ===== NAVBAR ===== */
+  #lp-nav .bar {
+    height: 64px; /* altura fija para evitar saltos */
+    background: linear-gradient(90deg, #050716, #050816, #050716);
+    transition: background 0.22s ease, box-shadow 0.22s ease;
+  }
+
+  #lp-nav.nav-compact .bar {
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .65);
+    background: linear-gradient(90deg, #050716, #070b1e);
+  }
+
+  #lp-nav .nav-link {
+    position: relative;
+    font-weight: 600;
+    font-size: 1rem;
+    color: rgba(248, 250, 252, .78);
+    transition: color 0.25s ease;
+  }
+
+  #lp-nav .nav-link:hover {
+    color: #fff;
+  }
+
+  #lp-nav .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 2px;
+    background: linear-gradient(90deg, #5469D5, #00E0C6);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s ease;
+  }
+
+  #lp-nav .nav-link.is-active::after,
+  #lp-nav .nav-link:hover::after {
+    transform: scaleX(1);
+  }
+
+  /* Logo imagen */
+  .brand-wrapper {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+  }
+
+  .brand-logo {
+    width: 110px;
+    height: auto;
+    filter: drop-shadow(0 10px 25px rgba(0, 0, 0, .65));
+    transition: transform 0.18s ease, filter 0.18s ease;
+  }
+
+  .brand-wrapper:hover .brand-logo {
+    transform: translateY(-1px) scale(1.02);
+    filter: drop-shadow(0 16px 40px rgba(0, 0, 0, .85));
+  }
+
+  .brand-sub {
+    font-size: .68rem;
+    letter-spacing: .24em;
+    text-transform: uppercase;
+    color: rgba(148, 163, 184, .85);
+  }
+
+  /* Avatar */
+  .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #5469D5, #00E0C6);
+    display: inline-block;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .12) inset;
+  }
+
+  /* Dropdown */
+  .menu {
+    min-width: 220px;
+    transform-origin: top right;
+    opacity: 0;
+    transform: scale(.96);
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+  }
+
+  .menu.open {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+
+  /* ===== HAMBURGER ===== */
+  .hamb {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, .15);
+    transition: border-color .2s;
+  }
+
+  .hamb:hover {
+    border-color: rgba(255, 255, 255, .3);
+  }
+
+  .hamb i {
+    position: relative;
+    width: 18px;
+    height: 2px;
+    background: #fff;
+    display: block;
+    transition: all .22s;
+  }
+
+  .hamb i::before,
+  .hamb i::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #fff;
+    transition: transform .22s, top .22s, opacity .22s;
+  }
+
+  .hamb i::before {
+    top: -6px;
+  }
+
+  .hamb i::after {
+    top: 6px;
+  }
+
+  .hamb.is-open i {
+    background: transparent;
+  }
+
+  .hamb.is-open i::before {
+    top: 0;
+    transform: rotate(45deg);
+  }
+
+  .hamb.is-open i::after {
+    top: 0;
+    transform: rotate(-45deg);
+  }
+
+  .hamb:focus-visible {
+    outline: 2px solid #5469D5;
+    outline-offset: 2px;
+  }
+
+  /* Drawer */
+  #drawer {
+    inset: 0;
+  }
+
+  #drawer .panel {
+    width: min(82vw, 320px);
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+  }
+
+  #drawer.show .panel {
+    transform: none;
+  }
+
+  #drawer .backdrop {
+    backdrop-filter: blur(4px);
+    background: rgba(10, 12, 20, .7);
+    opacity: 0;
+    transition: opacity .2s ease;
+  }
+
+  #drawer.show .backdrop {
+    opacity: 1;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    #lp-nav .bar {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    #lp-nav .nav-link {
+      font-size: 1rem;
+    }
+
+    .hamb {
+      display: inline-grid;
+    }
+
+    .hamb i::before,
+    .hamb i::after {
+      display: block;
+    }
+
+    .menu {
+      position: absolute;
+      top: 70px;
+      right: 16px;
+      background: rgba(10, 12, 20, .95);
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      padding: 12px 20px;
+      z-index: 10;
+    }
+  }
+</style>
+
+<header id="lp-nav" class="sticky top-0 z-40">
+  <div class="bar border-b border-white/10 backdrop-blur">
+    <div class="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
+      <!-- IZQUIERDA: Hamburguesa + Brand -->
+      <div class="flex items-center gap-3">
+        <button id="hamb" class="md:hidden hamb" aria-label="Abrir menú" aria-controls="drawer" aria-expanded="false">
+          <i></i>
+        </button>
+
+        <!-- LOGO IMAGEN -->
+        <a href="<%=__ctx%>/Vista/PaginaPrincipal.jsp" class="brand-wrapper select-none">
+          <img src="<%=__ctx%>/Imagenes/Livepass Buga Logo.png" alt="LivePassBuga" class="brand-logo" draggable="false">
+          <span class="hidden sm:block brand-sub">Tickets &amp; eventos</span>
+        </a>
+      </div>
+
+      <!-- CENTRO: Links -->
+      <nav class="flex items-center gap-6 mx-auto">
+        <a href="<%=__ctx%>/Vista/ExplorarEventos.jsp" class="nav-link" data-nav="explorar">Explorar</a>
+
+        <% if (__isClient) { %>
+          <a href="<%=__ctx%>/Vista/HomeCliente.jsp" class="nav-link" data-nav="homecli">Home</a>
+        <% } %>
+
+        <a href="<%=__ctx%>/Vista/PaginaPrincipal.jsp" class="nav-link" data-nav="inicio">Inicio</a>
+
+        <% if (__isOrg) { %>
+          <a href="<%=__ctx%>/Vista/DashboardOrganizador.jsp" class="nav-link" data-nav="org-dashboard">
+            Panel organizador
+          </a>
+          <a href="<%=__ctx%>/Vista/EventosOrganizador.jsp" class="nav-link" data-nav="org-eventos">
+            Mis eventos
+          </a>
+        <% } %>
+      </nav>
+
+      <!-- DERECHA: User / Auth -->
+      <div class="flex items-center gap-2">
+        <% if (__uid == null) { %>
+          <a href="<%=__ctx%>/Vista/Login.jsp" class="px-4 py-2 rounded-xl border border-white/18 hover:border-white/35 text-sm font-semibold transition">
+            Ingresar
+          </a>
+          <a href="<%=__ctx%>/Vista/Registro.jsp" class="btn-primary ripple text-sm">
+            Crear cuenta
+          </a>
+        <% } else { %>
+          <div class="relative">
+            <button id="userMenuBtn" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 hover:border-white/25 text-sm" aria-haspopup="menu" aria-expanded="false" aria-controls="userMenu">
+              <span class="avatar" aria-hidden="true"></span>
+              <span class="font-semibold max-w-[160px] truncate">
+                <%= (__name != null ? __name : "Usuario") %>
+              </span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="opacity-80" aria-hidden="true">
+                <path d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+            <div id="userMenu" class="menu hidden absolute right-0 mt-2 rounded-xl border border-white/10 bg-[rgba(10,12,20,.98)] shadow-xl" role="menu">
+              <% if (__isClient) { %>
+                <a href="<%=__ctx%>/Vista/HomeCliente.jsp" class="block px-4 py-2 hover:bg-white/10 text-sm" role="menuitem">
+                  Home cliente
+                </a>
+              <% } %>
+              <a href="<%=__ctx%>/Vista/MisTickets.jsp" class="block px-4 py-2 hover:bg-white/10 text-sm" role="menuitem">
+                Mis tickets
+              </a>
+              <% if (__isOrg) { %>
+                <a href="<%=__ctx%>/Vista/DashboardOrganizador.jsp" class="block px-4 py-2 hover:bg-white/10 text-sm" role="menuitem">
+                  Panel organizador
+                </a>
+                <a href="<%=__ctx%>/Vista/EventosOrganizador.jsp" class="block px-4 py-2 hover:bg-white/10 text-sm" role="menuitem">
+                  Mis eventos
+                </a>
+              <% } %>
+              <div class="h-px bg-white/10 my-1"></div>
+              <a href="<%=__ctx%>/Control/ct_logout.jsp" class="block px-4 py-2 text-pink-200 hover:bg-white/10 text-sm" role="menuitem">
+                Cerrar sesión
+              </a>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer móvil -->
+  <div id="drawer" class="fixed inset-0 hidden">
+    <div class="backdrop absolute inset-0"></div>
+    <div class="panel h-full bg-[#0A0C14] border-r border-white/10 shadow-2xl p-5 relative">
+      <div class="flex items-center justify-between">
+        <a href="<%=__ctx%>/Vista/PaginaPrincipal.jsp" class="brand-wrapper">
+          <img src="<%=__ctx%>/Imagenes/Livepass Buga Logo.png" alt="LivePassBuga" class="brand-logo" draggable="false">
+        </a>
+        <button id="drawerClose" class="hamb is-open" aria-label="Cerrar menú"><i></i></button>
+      </div>
+
+      <nav class="mt-6 space-y-2 text-sm">
+        <a href="<%=__ctx%>/Vista/ExplorarEventos.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+          Explorar
+        </a>
+        <% if (__isClient) { %>
+          <a href="<%=__ctx%>/Vista/HomeCliente.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+            Home cliente
+          </a>
+        <% } %>
+        <a href="<%=__ctx%>/Vista/PaginaPrincipal.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+          Inicio
+        </a>
+        <div class="h-px bg-white/10 my-2"></div>
+        <% if (__uid == null) { %>
+          <a href="<%=__ctx%>/Vista/Login.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+            Ingresar
+          </a>
+          <a href="<%=__ctx%>/Vista/Registro.jsp" class="block mt-2 btn-primary text-center">
+            Crear cuenta
+          </a>
+        <% } else { %>
+          <a href="<%=__ctx%>/Vista/MisTickets.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+            Mis tickets
+          </a>
+          <% if (__isOrg) { %>
+            <a href="<%=__ctx%>/Vista/DashboardOrganizador.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+              Panel organizador
+            </a>
+            <a href="<%=__ctx%>/Vista/EventosOrganizador.jsp" class="block px-3 py-2 rounded-lg hover:bg-white/10">
+              Mis eventos
+            </a>
+          <% } %>
+          <div class="h-px bg-white/10 my-2"></div>
+          <a href="<%=__ctx%>/Control/ct_logout.jsp" class="block px-3 py-2 rounded-lg text-pink-200 hover:bg-white/10">
+            Cerrar sesión
+          </a>
+        <% } %>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<script>
+  // Link activo por ruta
+  (function(){
+    var p = location.pathname.toLowerCase();
+    document.querySelectorAll('#lp-nav [data-nav]').forEach(function(a){
+      var key = a.getAttribute('data-nav');
+      if (key==='explorar'       && p.indexOf('/explorareventos')     > -1) a.classList.add('is-active');
+      if (key==='inicio'         && p.indexOf('/paginaprincipal')     > -1) a.classList.add('is-active');
+      if (key==='homecli'        && p.indexOf('/homecliente')         > -1) a.classList.add('is-active');
+      if (key==='org-dashboard'  && p.indexOf('/dashboardorganizador')> -1) a.classList.add('is-active');
+      if (key==='org-eventos'    && p.indexOf('/eventosorganizador')  > -1) a.classList.add('is-active');
+    });
+  })();
+
+  // Compactar navbar al hacer scroll (sin cambiar altura)
+  (function(){
+    var nav = document.getElementById('lp-nav'), y=0;
+    addEventListener('scroll', function(){
+      var ny = window.scrollY || document.documentElement.scrollTop;
+      if (ny>24 && y<=24) nav.classList.add('nav-compact');
+      if (ny<=24 && y>24) nav.classList.remove('nav-compact');
+      y = ny;
+    });
+  })();
+
+  // Dropdown usuario
+  (function(){
+    var btn  = document.getElementById('userMenuBtn');
+    var menu = document.getElementById('userMenu');
+    if (!btn || !menu) return;
+    var open = false;
+
+    function toggle(v){
+      open = (typeof v==='boolean') ? v : !open;
+      btn.setAttribute('aria-expanded', open);
+      if (open){
+        menu.classList.remove('hidden');
+        void menu.offsetWidth;
+        menu.classList.add('open');
+      } else {
+        menu.classList.remove('open');
+        setTimeout(function(){ menu.classList.add('hidden'); }, 180);
+      }
+    }
+
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      toggle();
+    });
+    document.addEventListener('click', function(e){
+      if (open && !menu.contains(e.target) && e.target!==btn) toggle(false);
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key==='Escape') toggle(false);
+    });
+  })();
+
+  // Drawer móvil
+  (function(){
+    var hamb   = document.getElementById('hamb');
+    var drawer = document.getElementById('drawer');
+    var close  = document.getElementById('drawerClose');
+    if(!hamb || !drawer) return;
+
+    function open(){
+      drawer.classList.remove('hidden');
+      void drawer.offsetWidth;
+      drawer.classList.add('show');
+      hamb.classList.add('is-open');
+      hamb.setAttribute('aria-expanded','true');
+      document.body.style.overflow = 'hidden';
+    }
+    function hide(){
+      drawer.classList.remove('show');
+      hamb.classList.remove('is-open');
+      hamb.setAttribute('aria-expanded','false');
+      document.body.style.overflow = '';
+      setTimeout(function(){ drawer.classList.add('hidden'); }, 220);
+    }
+
+    hamb.addEventListener('click', function(){
+      if (drawer.classList.contains('show')) hide(); else open();
+    });
+    close && close.addEventListener('click', hide);
+    drawer.addEventListener('click', function(e){
+      if(e.target.classList.contains('backdrop')) hide();
+    });
+  })();
+</script>

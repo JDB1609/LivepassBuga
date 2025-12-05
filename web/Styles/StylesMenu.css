@@ -1,0 +1,10 @@
+:root{
+  --bg:#0f1116; --panel:#171a22; --text:#e9ecf1; --muted:#9aa3b2;
+  --accent:#00d1b2; --accent-2:#6c5ce7;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial}
+a{color:inherit}
+.card.bg-body-tertiary{background:var(--panel)}
+.btn-info{background:var(--accent);border:none}
+.btn-info:hover{filter:brightness(1.05)}
+header, footer{background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
