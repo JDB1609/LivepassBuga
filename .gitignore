@@ -1,0 +1,5 @@
+# Ignorar artefactos de compilación de NetBeans/Java
+/build/
+/target/
+# Ignorar archivos del proyecto NetBeans (opcional, pero común)
+/nbproject/
