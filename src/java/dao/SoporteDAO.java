@@ -230,10 +230,10 @@ public class SoporteDAO {
         try {
             // ⚠️ IMPORTANTE: Configura estos valores con tus datos reales
             String parametros[] = {
-                "Soporte Tienda Online",            // Nombre del remitente
-                "tucorreo@gmail.com",              // Tu correo Gmail
-                "tu_contraseña_aplicacion",        // Contraseña de aplicación (NO la normal)
-                "Respuesta a tu consulta de soporte", // Asunto
+                "LivePass",            // Nombre del remitente
+                "apimultiservicioslanovena@gmail.com",              // Tu correo Gmail
+                "zgxhgckgcptgxffo",        // Contraseña de aplicación (NO la normal)
+                "LivePass - Respuesta a SOlucitud de soporte", // Asunto
                 construirMensajeEmail(mensaje, respuesta) // Cuerpo del mensaje
             };
             
@@ -252,23 +252,45 @@ public class SoporteDAO {
     // Construir el mensaje HTML del correo
     private String construirMensajeEmail(SoporteMensaje mensaje, String respuesta) {
         return "<html>"
-                + "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>"
-                + "<div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>"
-                + "<h2 style='color: #4CAF50;'>Respuesta a tu consulta de soporte</h2>"
-                + "<p>Hola <strong>" + mensaje.getNombre() + "</strong>,</p>"
-                + "<p>Hemos recibido tu consulta y te respondemos a continuación:</p>"
-                + "<div style='background-color: #f9f9f9; padding: 15px; border-left: 4px solid #4CAF50; margin: 15px 0;'>"
-                + "<p><strong>Tu consulta:</strong><br>" + mensaje.getMensaje() + "</p>"
+                + "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #ffffff; background-color: #0A0C14; margin: 0; padding: 20px;'>"
+                + "<div style='max-width: 600px; margin: 0 auto; background-color: #0A0C14; padding: 30px; border-radius: 15px;'>"
+
+                // Logo centrado
+                + "<div style='text-align: center; margin-bottom: 30px;'>"
+                + "<img src='https://res.cloudinary.com/dp4utz5l5/image/upload/v1764970216/Livepass_Buga_Logo_qnfqte.png' alt='Livepass Buga Logo' style='max-width: 250px; height: auto;'>"
                 + "</div>"
-                + "<div style='background-color: #e8f5e9; padding: 15px; border-left: 4px solid #2196F3; margin: 15px 0;'>"
-                + "<p><strong>Nuestra respuesta:</strong><br>" + respuesta + "</p>"
+
+                // Encabezado
+                + "<h2 style='color: #00E0C6; text-align: center; margin-bottom: 25px;'>Respuesta a tu consulta de soporte</h2>"
+
+                // Saludo
+                + "<p style='color: #ffffff; font-size: 16px;'>Hola <strong style='color: #00E0C6;'>" + mensaje.getNombre() + "</strong>,</p>"
+                + "<p style='color: #ffffff;'>Hemos recibido tu consulta y te respondemos a continuación:</p>"
+
+                // Consulta del usuario (tarjeta gris)
+                + "<div style='background-color: #262B39; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #00E0C6;'>"
+                + "<p style='color: #ffffff; margin: 0;'><strong style='color: #00E0C6;'>Tu consulta:</strong><br>" + mensaje.getMensaje() + "</p>"
                 + "</div>"
-                + "<p>Si necesitas más ayuda, no dudes en contactarnos nuevamente.</p>"
-                + "<hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>"
-                + "<p style='font-size: 12px; color: #777;'>"
+
+                // Respuesta (tarjeta gris)
+                + "<div style='background-color: #262B39; padding: 20px; border-radius: 10px; margin: 25px 0; border-left: 4px solid #6254D5;'>"
+                + "<p style='color: #ffffff; margin: 0;'><strong style='color: #6254D5;'>Nuestra respuesta:</strong><br>" + respuesta + "</p>"
+                + "</div>"
+
+                // Mensaje final
+                + "<p style='color: #ffffff;'>Si necesitas más ayuda, no dudes en contactarnos nuevamente.</p>"
+
+                // Separador
+                + "<hr style='border: none; border-top: 1px solid #262B39; margin: 30px 0;'>"
+
+                // Pie de página
+                + "<div style='text-align: center;'>"
+                + "<p style='font-size: 12px; color: #888;'>"
                 + "Este es un mensaje automático, por favor no responder a este correo.<br>"
-                + "ID de consulta: " + mensaje.getId()
+                + "ID de consulta: <span style='color: #00E0C6;'>" + mensaje.getId() + "</span>"
                 + "</p>"
+                + "</div>"
+
                 + "</div>"
                 + "</body>"
                 + "</html>";
