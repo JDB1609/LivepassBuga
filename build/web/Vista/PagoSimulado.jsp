@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ page import="dao.EventDAO, utils.Event" %>
 <%@ page import="java.math.BigDecimal, java.text.NumberFormat, java.util.Locale" %>
+<%@ page import="utils.Conexion, java.sql.Connection, java.sql.PreparedStatement, java.sql.ResultSet" %>
 
 <%
   // --- Guard session ---
@@ -8,16 +9,59 @@
   if (uid == null) { response.sendRedirect(request.getContextPath()+"/Vista/Login.jsp"); return; }
 
   // --- Params ---
-  int eventId = 0, qty = 1;
-  try { eventId = Integer.parseInt(request.getParameter("eventId")); } catch(Exception ignore){}
-  try { qty     = Math.max(1, Integer.parseInt(request.getParameter("qty"))); } catch(Exception ignore){}
+  int eventId = 0, qty = 1, ticketTypeId = 0;
+  try { eventId      = Integer.parseInt(request.getParameter("eventId")); }      catch(Exception ignore){}
+  try { qty          = Math.max(1, Integer.parseInt(request.getParameter("qty"))); } catch(Exception ignore){}
+  try { ticketTypeId = Integer.parseInt(request.getParameter("ticketTypeId")); } catch(Exception ignore){}
   if (eventId <= 0) { response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp"); return; }
 
-  // --- Data ---
+  // --- Data evento ---
   Event ev = new EventDAO().findById(eventId).orElse(null);
   if (ev == null) { response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp"); return; }
 
-  BigDecimal unit  = (ev.getPriceValue() != null) ? ev.getPriceValue() : BigDecimal.ZERO;
+  // === Cargar tipo de ticket / aforo elegido ===
+  String ticketTypeName = "General";
+  BigDecimal unit = BigDecimal.ZERO;
+
+  try {
+      Conexion cx = new Conexion();
+      String sql;
+      if (ticketTypeId > 0) {
+          sql = "SELECT id, name, price FROM ticket_types WHERE id = ? AND id_event = ? LIMIT 1";
+      } else {
+          sql = "SELECT id, name, price FROM ticket_types " +
+                "WHERE id_event = ? ORDER BY price ASC LIMIT 1";
+      }
+
+      try (Connection cn = cx.getConnection();
+           PreparedStatement ps = cn.prepareStatement(sql)) {
+
+          if (ticketTypeId > 0) {
+              ps.setInt(1, ticketTypeId);
+              ps.setInt(2, eventId);
+          } else {
+              ps.setInt(1, eventId);
+          }
+
+          try (ResultSet rs = ps.executeQuery()) {
+              if (rs.next()) {
+                  ticketTypeId   = rs.getInt("id");
+                  String n       = rs.getString("name");
+                  ticketTypeName = (n != null && !n.isEmpty()) ? n : ticketTypeName;
+                  unit           = rs.getBigDecimal("price");
+              }
+          }
+      }
+      cx.cerrarConexion();
+  } catch (Exception e) {
+      e.printStackTrace();
+  }
+
+  // Fallback si no se encontró ticket_type
+  if (unit == null || unit.compareTo(BigDecimal.ZERO) <= 0) {
+      unit = (ev.getPriceValue() != null) ? ev.getPriceValue() : BigDecimal.ZERO;
+  }
+
   BigDecimal total = unit.multiply(BigDecimal.valueOf(qty));
 
   NumberFormat COP = NumberFormat.getCurrencyInstance(new Locale("es","CO"));
@@ -38,7 +82,6 @@
     .muted{color:rgba(255,255,255,.72)}
     .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent);margin:12px 0}
 
-    /* Inputs */
     .input{
       width:100%;padding:.85rem 1rem;border-radius:12px;background:transparent;
       border:1px solid rgba(255,255,255,.15);color:#fff;outline:none;
@@ -50,7 +93,6 @@
     .field.invalid .error{display:block}
     .field.invalid .input{border-color:#ff9aa2}
 
-    /* Métodos de pago */
     .pm-wrap{display:grid;gap:10px;grid-template-columns:repeat(4, minmax(140px,1fr))}
     @media (max-width: 860px){ .pm-wrap{grid-template-columns:repeat(2,minmax(160px,1fr));} }
     @media (max-width: 420px){ .pm-wrap{grid-template-columns:1fr;} }
@@ -66,7 +108,6 @@
 
     .sticky{position:sticky;top:88px}
 
-    /* Modal */
     .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:70}
     .modal.show{display:flex}
     .modal .backdrop{position:absolute;inset:0;background:rgba(10,12,18,.65);backdrop-filter:blur(3px)}
@@ -103,7 +144,11 @@
       <!-- IZQ: formulario -->
       <section class="md:col-span-2 glassx p-6">
         <h1 class="text-2xl font-extrabold mb-1">Pagar entrada</h1>
-        <p class="muted mb-4"><b><%= ev.getTitle() %></b> · Cantidad: <b><%= qty %></b> · Total: <b><%= COP.format(total) %></b></p>
+        <p class="muted mb-1">
+          <b><%= ev.getTitle() %></b><br>
+          🎟️ Tipo de ticket: <b><%= ticketTypeName %></b><br>
+          Cantidad: <b><%= qty %></b> · Total: <b><%= COP.format(total) %></b>
+        </p>
 
         <!-- Método de pago -->
         <div class="mb-4">
@@ -118,9 +163,10 @@
 
         <form action="<%= request.getContextPath() %>/Control/ct_pago_simulado.jsp" method="post" class="space-y-4" id="payForm" novalidate>
           <!-- Hidden essentials -->
-          <input type="hidden" name="eventId" value="<%= eventId %>">
-          <input type="hidden" name="qty"     value="<%= qty %>">
-          <input type="hidden" name="amount"  value="<%= total %>">
+          <input type="hidden" name="eventId"      value="<%= eventId %>">
+          <input type="hidden" name="qty"          value="<%= qty %>">
+          <input type="hidden" name="amount"       value="<%= total %>">
+          <input type="hidden" name="ticketTypeId" value="<%= ticketTypeId %>">
           <input type="hidden" name="paymentMethod" id="paymentMethod" value="VISA">
           <!-- Página de retorno si hay error -->
           <input type="hidden" name="back" value="/Vista/PagoSimulado.jsp">
@@ -184,7 +230,11 @@
         </div>
 
         <div class="mt-4 text-sm">
-          ¿Problemas con el pago? <a class="underline" href="<%= request.getContextPath() %>/Vista/Checkout.jsp?eventId=<%= eventId %>&qty=<%= qty %>">volver a resumen</a>.
+          ¿Problemas con el pago?
+          <a class="underline"
+             href="<%= request.getContextPath() %>/Vista/Checkout.jsp?eventId=<%= eventId %>&qty=<%= qty %>&ticketTypeId=<%= ticketTypeId %>">
+            volver a resumen
+          </a>.
         </div>
       </section>
 
@@ -193,6 +243,7 @@
         <h3 class="font-bold text-lg mb-3">Resumen</h3>
         <ul class="text-white/80 space-y-1">
           <li class="flex justify-between"><span>Evento</span><span class="text-right"><%= ev.getTitle() %></span></li>
+          <li class="flex justify-between"><span>Tipo de ticket</span><span><%= ticketTypeName %></span></li>
           <li class="flex justify-between"><span>Precio unitario</span><span><%= COP.format(unit) %></span></li>
           <li class="flex justify-between"><span>Cantidad</span><span><%= qty %></span></li>
           <li class="flex justify-between"><span>Total</span><span class="font-extrabold"><%= COP.format(total) %></span></li>
@@ -244,13 +295,12 @@
   </footer>
 
   <script>
-    // UI método de pago + mostrar/ocultar campos y modal para PSE/Nequi (simuladores)
+    // UI método de pago + modal PSE/Nequi
     (function(){
       const grid = document.getElementById('pmGrid');
       const out  = document.getElementById('paymentMethod');
       const cardFields = document.getElementById('cardFields');
 
-      // modal
       const modal = document.getElementById('pmModal');
       const pmChip = document.getElementById('pmChip');
       const pmTitle = document.getElementById('pmTitle');
@@ -259,7 +309,6 @@
       const pmContinue = document.getElementById('pmContinue');
       const closeBtns = [document.getElementById('pmClose'), document.getElementById('pmCancel'), modal.querySelector('.backdrop')];
 
-      // campos tarjeta
       const card = document.getElementById('card');
       const cvv  = document.getElementById('cvv');
       const exp  = document.getElementById('exp');
@@ -268,7 +317,7 @@
 
       function simulatorURL(method){
         const base = '<%= request.getContextPath() %>/Vista/' + (method==='PSE' ? 'PSE_Simulado.jsp' : 'Nequi_Simulado.jsp');
-        const qs = `?eventId=<%= eventId %>&qty=<%= qty %>&amount=<%= total %>`;
+        const qs = `?eventId=<%= eventId %>&qty=<%= qty %>&amount=<%= total %>&ticketTypeId=<%= ticketTypeId %>`;
         return base + qs;
       }
 
@@ -336,7 +385,7 @@
       sync();
     })();
 
-    // Formateo tarjeta (caret estable)
+    // Formateo tarjeta
     (function(){
       const input = document.getElementById('card');
       if (!input) return;

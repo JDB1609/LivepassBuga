@@ -1,29 +1,87 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ page import="dao.EventDAO, utils.Event" %>
 <%@ page import="java.math.BigDecimal, java.math.RoundingMode, java.text.NumberFormat, java.util.Locale" %>
+<%@ page import="utils.Conexion, java.sql.Connection, java.sql.PreparedStatement, java.sql.ResultSet" %>
 
 <%
   // --- Guard de sesión ---
   Integer uid = (Integer) session.getAttribute("userId");
-  if (uid == null) { response.sendRedirect(request.getContextPath()+"/Vista/Login.jsp"); return; }
+  if (uid == null) {
+    response.sendRedirect(request.getContextPath()+"/Vista/Login.jsp");
+    return;
+  }
 
   // --- Parámetros ---
   int eventId = 0, qty = 1;
+  int ticketTypeId = 0; // aforo elegido (si viene)
   String coupon = request.getParameter("coupon");
-  try { eventId = Integer.parseInt(request.getParameter("eventId")); } catch(Exception ignore){}
-  try { qty = Math.max(1, Integer.parseInt(request.getParameter("qty"))); } catch(Exception ignore){}
-  if (eventId <= 0) { response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp"); return; }
+
+  try { eventId      = Integer.parseInt(request.getParameter("eventId")); } catch(Exception ignore){}
+  try { qty          = Math.max(1, Integer.parseInt(request.getParameter("qty"))); } catch(Exception ignore){}
+  try { ticketTypeId = Integer.parseInt(request.getParameter("ticketTypeId")); } catch(Exception ignore){}
+
+  if (eventId <= 0) {
+    response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp");
+    return;
+  }
 
   // --- Cargar evento ---
   Event ev = new EventDAO().findById(eventId).orElse(null);
-  if (ev == null) { response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp"); return; }
+  if (ev == null) {
+    response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp");
+    return;
+  }
 
-  // Disponibilidad
+  // Disponibilidad general del evento (sumatoria de aforos - vendidos)
   int avail = Math.max(0, ev.getAvailability());
   if (avail > 0 && qty > avail) qty = avail;
 
+  // === Cargar tipo de ticket / aforo elegido ===
+  String ticketTypeName = "General";
+  int capacityTotal = 0;
+  BigDecimal unit = BigDecimal.ZERO; // precio real del aforo
+
+  try {
+      Conexion cx = new Conexion();
+      String sql;
+      if (ticketTypeId > 0) {
+          // Si ya viene un tipo elegido, usamos ese
+          sql = "SELECT id, name, capacity, price " +
+                "FROM ticket_types WHERE id = ? LIMIT 1";
+      } else {
+          // Si no, tomamos el más barato del evento
+          sql = "SELECT id, name, capacity, price " +
+                "FROM ticket_types " +
+                "WHERE id_event = ? " +
+                "ORDER BY price ASC " +
+                "LIMIT 1";
+      }
+
+      try (Connection cn = cx.getConnection();
+           PreparedStatement ps = cn.prepareStatement(sql)) {
+
+          ps.setInt(1, (ticketTypeId > 0 ? ticketTypeId : eventId));
+          try (ResultSet rs = ps.executeQuery()) {
+              if (rs.next()) {
+                  ticketTypeId   = rs.getInt("id");  // nos aseguramos de tener el id correcto
+                  String n       = rs.getString("name");
+                  ticketTypeName = (n != null && !n.isEmpty()) ? n : ticketTypeName;
+                  capacityTotal  = rs.getInt("capacity");
+                  unit           = rs.getBigDecimal("price");   // precio del aforo
+              }
+          }
+      }
+      cx.cerrarConexion();
+  } catch (Exception e) {
+      e.printStackTrace();
+  }
+
+  // Si por alguna razón no hay ticket_types, usamos el precio del evento como fallback
+  if (unit == null || unit.compareTo(BigDecimal.ZERO) <= 0) {
+      unit = (ev.getPriceValue()!=null) ? ev.getPriceValue() : BigDecimal.ZERO;
+  }
+
   // Precio unitario y cálculos
-  BigDecimal unit = (ev.getPriceValue()!=null) ? ev.getPriceValue() : BigDecimal.ZERO;
   BigDecimal subtotal = unit.multiply(BigDecimal.valueOf(qty));
 
   // Fees (demo)
@@ -35,8 +93,13 @@
   boolean couponValid = false;
   if (coupon != null && !coupon.trim().isEmpty()) {
     String c = coupon.trim().toUpperCase(Locale.ROOT);
-    if ("LIVE10".equals(c)) { discount = subtotal.multiply(new BigDecimal("0.10")).setScale(0, RoundingMode.HALF_UP); couponValid = true; }
-    else if ("VIP20".equals(c)) { discount = subtotal.multiply(new BigDecimal("0.20")).setScale(0, RoundingMode.HALF_UP); couponValid = true; }
+    if ("LIVE10".equals(c)) {
+      discount = subtotal.multiply(new BigDecimal("0.10")).setScale(0, RoundingMode.HALF_UP);
+      couponValid = true;
+    } else if ("VIP20".equals(c)) {
+      discount = subtotal.multiply(new BigDecimal("0.20")).setScale(0, RoundingMode.HALF_UP);
+      couponValid = true;
+    }
   }
 
   BigDecimal total = subtotal.add(serviceFee).add(processing).subtract(discount);
@@ -118,7 +181,17 @@
             <p class="muted">📅 <%= (ev.getDateTime()!=null
                 ? ev.getDateTime().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
                 : ev.getDate()) %></p>
-            <div class="mt-2"><span class="badge">Disponibles: <%= avail %></span></div>
+
+            <!-- Tipo de ticket + aforo + disponibles -->
+            <p class="muted mt-1">
+              🎟️ Tipo de ticket: <b><%= ticketTypeName %></b>
+              <% if (capacityTotal > 0) { %>
+                &nbsp;• Aforo: <%= capacityTotal %>
+              <% } %>
+            </p>
+            <div class="mt-2">
+              <span class="badge">Disponibles: <%= avail %></span>
+            </div>
           </div>
           <div class="text-right"><div class="badge">Evento</div></div>
         </div>
@@ -128,13 +201,19 @@
         <!-- Cantidad -->
         <form action="<%= request.getContextPath() %>/Vista/Checkout.jsp" method="get" class="flex flex-wrap items-center gap-3">
           <input type="hidden" name="eventId" value="<%= eventId %>"/>
+          <input type="hidden" name="ticketTypeId" value="<%= ticketTypeId %>"/>
+
           <label class="text-white/80">Cantidad</label>
           <div class="qty-wrap">
-            <button id= "btnMinus" aria-label="Disminuir cantidad de entradas" class="qty-btn" type="button" id="btnMinus">−</button>
-            <input class="qty-input" id="qtyInput" name="qty" type="number" min="1" max="<%= Math.max(1, avail) %>" value="<%= qty %>"/>
-            <button id= "btnPlus" aria-label="Aumentar cantidad de entradas" class="qty-btn" type="button" id="btnPlus">+</button>
+            <button aria-label="Disminuir cantidad de entradas" class="qty-btn" type="button" id="btnMinus">−</button>
+            <input class="qty-input" id="qtyInput" name="qty" type="number"
+                   min="1" max="<%= Math.max(1, avail) %>" value="<%= qty %>"/>
+            <button aria-label="Aumentar cantidad de entradas" class="qty-btn" type="button" id="btnPlus">+</button>
           </div>
-          <button class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30" type="submit" aria-label="Actualizar información del pedido">Actualizar</button>
+          <button class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30"
+                  type="submit" aria-label="Actualizar información del pedido">
+            Actualizar
+          </button>
         </form>
 
         <% if (avail == 0) { %>
@@ -158,20 +237,26 @@
         <h2 class="font-bold text-lg mb-2">Preguntas frecuentes</h2>
         <div class="space-y-3">
           <div class="faq-item">
-            <button arial-label="Mostrar información de cómo recibir las entradas" class="faq-q flex items-center justify-between w-full"
-              >¿Cómo recibo mis entradas?<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
+            <button aria-label="Mostrar información de cómo recibir las entradas"
+                    class="faq-q flex items-center justify-between w-full">
+              ¿Cómo recibo mis entradas?
+              <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
             </button>
             <div class="faq-a">Tras el pago, te enviamos el QR al correo y lo verás en “Mis tickets”.</div>
           </div>
           <div class="faq-item">
-            <button arial-label="Mostrar respuesta sobre entrar sin internet" class="faq-q flex items-center justify-between w-full">
-                ¿Puedo entrar sin internet?<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
+            <button aria-label="Mostrar respuesta sobre entrar sin internet"
+                    class="faq-q flex items-center justify-between w-full">
+              ¿Puedo entrar sin internet?
+              <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
             </button>
             <div class="faq-a">Sí. Descarga tu QR; los validadores funcionan offline.</div>
           </div>
           <div class="faq-item">
-            <button arial-label="Mostrar información sobre transferencia de ticket" class="faq-q flex items-center justify-between w-full">
-                ¿Puedo transferir mi ticket?<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
+            <button aria-label="Mostrar información sobre transferencia de ticket"
+                    class="faq-q flex items-center justify-between w-full">
+              ¿Puedo transferir mi ticket?
+              <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5"/></svg>
             </button>
             <div class="faq-a">Según la política del organizador puedes transferirlo a otro usuario.</div>
           </div>
@@ -186,11 +271,16 @@
         <form action="<%= request.getContextPath() %>/Vista/Checkout.jsp" method="get" class="mb-4">
           <input type="hidden" name="eventId" value="<%= eventId %>"/>
           <input type="hidden" name="qty" value="<%= qty %>"/>
+          <input type="hidden" name="ticketTypeId" value="<%= ticketTypeId %>"/>
+
           <div class="flex gap-2">
-            <input type="text" name="coupon" placeholder="Cupón (LIVE10 o VIP20)" value="<%= (coupon!=null?coupon:"") %>"
+            <input type="text" name="coupon" placeholder="Cupón (LIVE10 o VIP20)"
+                   value="<%= (coupon!=null?coupon:"") %>"
                    class="w-full px-3 py-2 rounded-xl bg-transparent border border-white/15 focus:border-white/30 outline-none">
-            <button 
-                arial-label="Aplicar descuento" class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30" type="submit">Aplicar
+            <button aria-label="Aplicar descuento"
+                    class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30"
+                    type="submit">
+              Aplicar
             </button>
           </div>
           <% if (coupon != null && !coupon.isEmpty()) { %>
@@ -208,7 +298,9 @@
           <li class="flex justify-between"><span>Fee servicio (5%)</span><span><%= COP.format(serviceFee) %></span></li>
           <li class="flex justify-between"><span>Procesamiento</span><span><%= COP.format(processing) %></span></li>
           <% if (discount.compareTo(BigDecimal.ZERO) > 0) { %>
-            <li class="flex justify-between text-green-300"><span>Descuento</span><span>− <%= COP.format(discount) %></span></li>
+            <li class="flex justify-between text-green-300">
+              <span>Descuento</span><span>− <%= COP.format(discount) %></span>
+            </li>
           <% } %>
         </ul>
         <div class="divider"></div>
@@ -238,14 +330,21 @@
         </div>
 
         <div class="mt-4 space-y-3">
-          <a id="btnPay" arial-label="Proceder al pago del pedido" class="btn-primary ripple block text-center <%= (avail==0?"opacity-50 pointer-events-none":"") %>"
-             href="<%= request.getContextPath() %>/Vista/PagoSimulado.jsp?eventId=<%= eventId %>&qty=<%= qty %>&coupon=<%= (coupon!=null?coupon:"") %>">
-            Pagar ahora (<%= COP.format(total) %>)
+          <a id="btnPay"
+   aria-label="Proceder al pago del pedido"
+   class="btn-primary ripple block text-center <%= (avail==0?"opacity-50 pointer-events-none":"") %>"
+   href="<%= request.getContextPath() %>/Vista/PagoSimulado.jsp?eventId=<%= eventId %>&qty=<%= qty %>&coupon=<%= (coupon!=null?java.net.URLEncoder.encode(coupon, "UTF-8"):"") %>&ticketTypeId=<%= ticketTypeId %>">
+    Pagar ahora (<%= COP.format(total) %>)
+</a>
+
+          <a class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30 block text-center"
+             href="<%= request.getContextPath() %>/Vista/EventoDetalle.jsp?id=<%= eventId %>">
+            Ver detalles del evento
           </a>
           <a class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30 block text-center"
-             href="<%= request.getContextPath() %>/Vista/EventoDetalle.jsp?id=<%= eventId %>">Ver detalles del evento</a>
-          <a class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30 block text-center"
-             href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">Seguir explorando</a>
+             href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">
+            Seguir explorando
+          </a>
         </div>
       </aside>
     </div>
@@ -253,8 +352,11 @@
     <!-- PQRS COMPRAS -->
     <section class="mt-8 glassx p-6">
       <h3 class="text-xl font-extrabold">¿Necesitas ayuda con tu compra? (PQRS)</h3>
-      <p class="text-white/70 mb-4">Envíanos una <b>P</b>etición, <b>Q</b>ueja, <b>R</b>eclamo o <b>S</b>ugerencia sobre esta transacción.</p>
-      <form action="<%= request.getContextPath() %>/Control/ct_pqrs_compra.jsp" method="post" enctype="multipart/form-data" class="space-y-3">
+      <p class="text-white/70 mb-4">
+        Envíanos una <b>P</b>etición, <b>Q</b>ueja, <b>R</b>eclamo o <b>S</b>ugerencia sobre esta transacción.
+      </p>
+      <form action="<%= request.getContextPath() %>/Control/ct_pqrs_compra.jsp"
+            method="post" enctype="multipart/form-data" class="space-y-3">
         <!-- Referencias ocultas -->
         <input type="hidden" name="eventId" value="<%= eventId %>">
         <input type="hidden" name="userId" value="<%= uid %>">
@@ -274,11 +376,13 @@
           </div>
           <div>
             <label class="block text-sm mb-1">Asunto</label>
-            <input class="input" type="text" name="asunto" placeholder="Ej. Error en el cobro / cambio de titular" required>
+            <input class="input" type="text" name="asunto"
+                   placeholder="Ej. Error en el cobro / cambio de titular" required>
           </div>
           <div>
             <label class="block text-sm mb-1">Correo de contacto</label>
-            <input class="input" type="email" name="email" placeholder="tucorreo@ejemplo.com" required>
+            <input class="input" type="email" name="email"
+                   placeholder="tucorreo@ejemplo.com" required>
           </div>
           <div>
             <label class="block text-sm mb-1">Teléfono</label>
@@ -286,12 +390,15 @@
           </div>
           <div class="md:col-span-2">
             <label class="block text-sm mb-1">Detalle</label>
-            <textarea class="textarea" name="detalle" rows="4" placeholder="Cuéntanos qué ocurrió, número de referencia si lo tienes…" required></textarea>
+            <textarea class="textarea" name="detalle" rows="4"
+                      placeholder="Cuéntanos qué ocurrió, número de referencia si lo tienes…" required></textarea>
           </div>
           <div class="md:col-span-2">
             <label class="block text-sm mb-1">Adjuntos (opcional)</label>
             <input class="input" type="file" name="adjunto" accept=".png,.jpg,.jpeg,.pdf">
-            <p class="text-xs text-white/60 mt-1">Aceptamos imágenes o PDF (máx. 5 MB, configúralo en tu servlet si deseas limitar).</p>
+            <p class="text-xs text-white/60 mt-1">
+              Aceptamos imágenes o PDF (máx. 5 MB, configúralo en tu servlet si deseas limitar).
+            </p>
           </div>
         </div>
 
@@ -299,7 +406,7 @@
           <label class="inline-flex items-center gap-2 text-sm">
             <input type="checkbox" required> Autorizo el tratamiento de mis datos para gestionar mi solicitud.
           </label>
-          <button arial-label="Enviar formulario de PQRS" class="btn-primary">Enviar PQRS</button>
+          <button aria-label="Enviar formulario de PQRS" class="btn-primary">Enviar PQRS</button>
         </div>
       </form>
     </section>
@@ -321,37 +428,70 @@
 
   <script>
     // Ripple
-    (function(){ document.querySelectorAll('.ripple').forEach(b=>b.addEventListener('click',function(e){
-      const r=this.getBoundingClientRect(),s=document.createElement('span'),z=Math.max(r.width,r.height);
-      s.style.width=s.style.height=z+'px'; s.style.left=(e.clientX-r.left-z/2)+'px'; s.style.top=(e.clientY-r.top-z/2)+'px';
-      this.appendChild(s); setTimeout(()=>s.remove(),600);
-    }));})();
+    (function(){
+      document.querySelectorAll('.ripple').forEach(function(b){
+        b.addEventListener('click', function(e){
+          const r = this.getBoundingClientRect();
+          const s = document.createElement('span');
+          const z = Math.max(r.width, r.height);
+          s.style.width  = z + 'px';
+          s.style.height = z + 'px';
+          s.style.left   = (e.clientX - r.left - z/2) + 'px';
+          s.style.top    = (e.clientY - r.top  - z/2) + 'px';
+          this.appendChild(s);
+          setTimeout(function(){ s.remove(); }, 600);
+        });
+      });
+    })();
 
     // FAQ
     (function(){
-      document.querySelectorAll('.faq-item').forEach(it=>{
-        it.querySelector('.faq-q').addEventListener('click', ()=> it.classList.toggle('open'));
+      document.querySelectorAll('.faq-item').forEach(function(it){
+        const q = it.querySelector('.faq-q');
+        q.addEventListener('click', function(){
+          it.classList.toggle('open');
+        });
       });
     })();
 
     // Cantidad con botones
     (function(){
-      var minus=document.getElementById('btnMinus'), plus=document.getElementById('btnPlus'), input=document.getElementById('qtyInput');
-      if(!minus||!plus||!input) return;
+      var minus = document.getElementById('btnMinus'),
+          plus  = document.getElementById('btnPlus'),
+          input = document.getElementById('qtyInput');
+      if (!minus || !plus || !input) return;
+
       function clamp(v){
-        var min=parseInt(input.min||'1',10), max=parseInt(input.max||'999',10);
-        v=isNaN(v)?min:v; v=Math.max(min, Math.min(max, v)); input.value=v;
+        var min = parseInt(input.min || '1', 10),
+            max = parseInt(input.max || '999', 10);
+        v = isNaN(v) ? min : v;
+        v = Math.max(min, Math.min(max, v));
+        input.value = v;
       }
-      minus.addEventListener('click', ()=>clamp(parseInt(input.value||'1',10)-1));
-      plus .addEventListener('click', ()=>clamp(parseInt(input.value||'1',10)+1));
+
+      minus.addEventListener('click', function(){
+        clamp(parseInt(input.value || '1', 10) - 1);
+      });
+      plus.addEventListener('click', function(){
+        clamp(parseInt(input.value || '1', 10) + 1);
+      });
     })();
 
     // Pagar sólo si acepta términos
     (function(){
-      var chk=document.getElementById('chkTerms'), pay=document.getElementById('btnPay');
-      if(!chk||!pay) return;
-      function sync(){ if(chk.checked){ pay.classList.remove('opacity-50','pointer-events-none'); } else { pay.classList.add('opacity-50','pointer-events-none'); } }
-      chk.addEventListener('change', sync); sync();
+      var chk = document.getElementById('chkTerms'),
+          pay = document.getElementById('btnPay');
+      if (!chk || !pay) return;
+
+      function sync(){
+        if (chk.checked) {
+          pay.classList.remove('opacity-50','pointer-events-none');
+        } else {
+          pay.classList.add('opacity-50','pointer-events-none');
+        }
+      }
+      chk.addEventListener('change', sync);
+      sync();
     })();
   </script>
 </body>

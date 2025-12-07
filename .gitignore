@@ -3,3 +3,4 @@
 /target/
 # Ignorar archivos del proyecto NetBeans (opcional, pero común)
 /nbproject/
+/dist/

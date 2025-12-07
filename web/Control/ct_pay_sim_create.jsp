@@ -1,27 +1,47 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
-<%@ page import="dao.EventDAO,dao.OrderDAO,utils.Event,java.math.BigDecimal,java.net.URLEncoder" %>
+<%@ page import="dao.EventDAO, dao.TicketDAO, utils.Event, java.math.BigDecimal" %>
 <%
-  Integer uid = (Integer) session.getAttribute("userId");
-  if (uid == null) { response.sendRedirect(request.getContextPath()+"/Vista/Login.jsp"); return; }
+    Integer uid = (Integer) session.getAttribute("userId");
+    if (uid == null) {
+        response.sendRedirect(request.getContextPath() + "/Vista/Login.jsp");
+        return;
+    }
 
-  int eventId = Integer.parseInt(request.getParameter("eventId"));
-  int qty = Integer.parseInt(request.getParameter("qty"));
-  qty = Math.max(1, Math.min(qty, 10));
+    int eventId = 0;
+    int qty     = 1;
+    try {
+        eventId = Integer.parseInt(request.getParameter("eventId"));
+        qty     = Integer.parseInt(request.getParameter("qty"));
+    } catch (Exception ignore) {}
 
-  Event ev = new EventDAO().findById(eventId).orElse(null);
-  if (ev == null) { response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp"); return; }
+    // Limitar cantidad entre 1 y 10
+    qty = Math.max(1, Math.min(qty, 10));
 
-  BigDecimal unit  = ev.getPrice();
-  BigDecimal total = unit.multiply(new BigDecimal(qty));
+    Event ev = new EventDAO().findById(eventId).orElse(null);
+    if (ev == null) {
+        response.sendRedirect(request.getContextPath() + "/Vista/PaginaPrincipal.jsp");
+        return;
+    }
 
-  OrderDAO od = new OrderDAO();
-  int orderId = od.createPendingOrder(uid, eventId, qty, unit, total);
-  od.attachProvider(orderId, "SIM", "SIM-PREF-"+System.currentTimeMillis());
+    BigDecimal unit = ev.getPrice();
+    if (unit == null) unit = BigDecimal.ZERO;
+    BigDecimal total = unit.multiply(new BigDecimal(qty));
 
-  String base = request.getContextPath();
-  String returnUrl = base + "/Vista/PayReturn.jsp?orderId=" + orderId;
-  String gateway = base + "/Vista/FakeGateway.jsp?orderId="+orderId
-                 + "&amount=" + URLEncoder.encode(total.toPlainString(),"UTF-8")
-                 + "&return=" + URLEncoder.encode(returnUrl,"UTF-8");
-  response.sendRedirect(gateway);
+    // Ejecutar compra directa (sin OrderDAO)
+    TicketDAO ticketDao = new TicketDAO();
+    TicketDAO.PurchaseResult pr = ticketDao.purchase(eventId, uid, qty, unit);
+
+    if (!pr.ok) {
+        // No había cupos o falló algo
+        response.sendRedirect(request.getContextPath() + "/Vista/PagoError.jsp");
+        return;
+    }
+
+    // Guardar info en sesión para mostrar en PagoOK.jsp
+    session.setAttribute("lastQrCodes", pr.codes);
+    session.setAttribute("lastEventTitle", ev.getTitle());
+    session.setAttribute("lastQty", qty);
+    session.setAttribute("lastTotal", total);
+
+    response.sendRedirect(request.getContextPath() + "/Vista/PagoOK.jsp");
 %>

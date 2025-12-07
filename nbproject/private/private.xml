@@ -15,7 +15,6 @@
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_crear_administrador.jsp</file>
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_event_delete.jsp</file>
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/EventoEditar.jsp</file>
-            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/ExplorarEventos.jsp</file>
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/PagoSimulado.jsp</file>
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/PagoResultado.jsp</file>
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Styles/estilos.css</file>
@@ -31,6 +30,24 @@
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/Conexion.java</file>
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/Event.java</file>
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/Hash.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_explorar_eventos.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/ExplorarEventos.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/EventoDetalle.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_pago_simulado.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_payment_sim.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_pay_sim_create.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/TicketPDF.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/qr_image.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_transfer_ticket.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_responder_soporte.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_registro.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_mis_tickets.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Control/ct_logout_admin.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/utils/TicketTypes.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/dao/TicketDAO.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/TicketQR.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/MisTickets.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/Checkout.jsp</file>
         </group>
     </open-files>
 </project-private>

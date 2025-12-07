@@ -26,11 +26,11 @@
   String secret = application.getInitParameter("qr.secret");
   if (secret == null) secret = "demo-secret";
 
-  String payload = t.getQrCode();
+  String payload = t.getQrData();  // <-- cambio aquí
   if (payload == null || payload.trim().isEmpty()) {
     String sec = QrUtil.sha256Hex(t.getId()+"|"+t.getEventId()+"|"+uid+"|"+secret).substring(0, 12);
     payload = "LP|TID="+t.getId()+"|EV="+t.getEventId()+"|USR="+uid+"|SEC="+sec;
-    // Si quieres persistirlo: UPDATE tickets SET qr_code=? WHERE id=?
+    // Si quieres persistirlo: UPDATE tickets SET qr_data=? WHERE id=?
   }
 
   // Generar PNG y escribirlo

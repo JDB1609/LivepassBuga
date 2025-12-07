@@ -296,7 +296,7 @@
             <!-- MENÚ -->
             <ul class="hidden md:flex gap-8 items-center text-sm font-medium">
                 <li><a href="#" class="nav-link">Inicio</a></li>
-                <li><a href="#" class="nav-link">Eventos</a></li>
+                <li><a href="ExplorarEventos.jsp" class="nav-link">Descubrir</a></li>
                 <li><a href="#" class="nav-link">Categorías</a></li>
                 <li><a href="../Vista/Soporte.jsp" class="nav-link">Soporte</a></li>
             </ul>

@@ -1,10 +1,14 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ page import="java.util.List" %>
 <%@ page import="utils.Ticket" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <%
   // ===== Guard: solo CLIENTE =====
   Integer _uid = (Integer) session.getAttribute("userId");
-  if (_uid == null) { response.sendRedirect(request.getContextPath()+"/Vista/Login.jsp"); return; }
+  if (_uid == null) { 
+    response.sendRedirect(request.getContextPath()+"/Vista/Login.jsp"); 
+    return; 
+  }
   String _role = (String) session.getAttribute("role");
   if (_role == null || !"CLIENTE".equalsIgnoreCase(_role)) { 
     response.sendRedirect(request.getContextPath()+"/Vista/DashboardOrganizador.jsp"); 
@@ -62,6 +66,8 @@
       int paCount = (past!=null? past.size() : 0);
       String refOk = request.getParameter("ref");
       String ok    = request.getParameter("ok");
+
+      DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     %>
 
     <% if ("1".equals(ok) && refOk!=null) { %>
@@ -82,15 +88,16 @@
         if (upCount > 0) {
           int i=0;
           for (Ticket t: upcoming) {
+            String dateStr = (t.getEventDateTime()!=null) ? t.getEventDateTime().format(df) : "";
       %>
       <article class="card glass ring rounded-2xl p-5 animate-fadeUp" style="animation-delay:<%= (i++ * 0.06) %>s">
         <div class="flex items-center justify-between mb-2">
           <h3 class="font-bold text-lg leading-tight line-clamp-2"><%= t.getEventTitle() %></h3>
           <span class="pill pill-ok">VÁLIDO</span>
         </div>
-        <p class="text-white/70">📅 <%= t.getDate() %></p>
+        <p class="text-white/70">📅 <%= dateStr %></p>
         <p class="text-white/70">📍 <%= t.getVenue() %></p>
-        <p class="text-white/60 text-sm mt-1">🎟️ Asiento: <%= (t.getSeat()!=null && !t.getSeat().isEmpty()) ? t.getSeat() : "General" %></p>
+        <p class="text-white/60 text-sm mt-1">🎟️ Entradas: <%= t.getQty() %></p>
         <div class="actions mt-4">
           <a class="btn-primary ripple" href="TicketQR.jsp?tid=<%= t.getId() %>">Ver QR</a>
           <a class="px-4 py-2 rounded-lg border border-white/15 hover:border-white/30 font-bold transition"
@@ -118,15 +125,16 @@
             String st = String.valueOf(t.getStatus());
             String pillCls = "USADO".equalsIgnoreCase(st) ? "pill-used" :
                              "REEMBOLSADO".equalsIgnoreCase(st) ? "pill-refund" : "pill-used";
+            String dateStr = (t.getEventDateTime()!=null) ? t.getEventDateTime().format(df) : "";
       %>
       <article class="card glass ring rounded-2xl p-5 animate-fadeUp" style="animation-delay:<%= (j++ * 0.06) %>s">
         <div class="flex items-center justify-between mb-2">
           <h3 class="font-bold text-lg leading-tight line-clamp-2"><%= t.getEventTitle() %></h3>
           <span class="pill <%= pillCls %>"><%= st %></span>
         </div>
-        <p class="text-white/70">📅 <%= t.getDate() %></p>
+        <p class="text-white/70">📅 <%= dateStr %></p>
         <p class="text-white/70">📍 <%= t.getVenue() %></p>
-        <p class="text-white/60 text-sm mt-1">🎟️ Asiento: <%= (t.getSeat()!=null && !t.getSeat().isEmpty()) ? t.getSeat() : "General" %></p>
+        <p class="text-white/60 text-sm mt-1">🎟️ Entradas: <%= t.getQty() %></p>
         <div class="actions mt-4">
           <span class="px-4 py-2 rounded-lg border border-white/15 text-white/50 cursor-not-allowed">Ver QR</span>
           <a class="px-4 py-2 rounded-lg border border-white/15 hover:border-white/30 font-bold transition"

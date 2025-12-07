@@ -31,7 +31,8 @@
         <h1 class="text-2xl font-extrabold"><%= t.getEventTitle()!=null ? t.getEventTitle() : "Evento" %></h1>
         <p class="text-white/70 mt-1">📅 <%= dateStr %></p>
         <p class="text-white/70">📍 <%= t.getVenue()!=null ? t.getVenue() : "" %></p>
-        <p class="text-white/70">🎟️ Asiento: <%= t.getSeat()!=null?t.getSeat():"General" %></p>
+        <p class="text-white/70">🎟️ Entradas: <%= t.getQty() %></p>
+
 
         <div class="mt-6 flex gap-3">
           <a class="btn-primary ripple"
