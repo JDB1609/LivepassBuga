@@ -100,6 +100,8 @@
     <a href="CrearAdministrador.jsp" class="boton-negro boton-mini">Crear Admin</a>
 
     <a href="#" class="boton-negro boton-mini">Responder PQRS</a>
+    
+    <a href="Reportes.jsp" class="boton-negro boton-mini">Reportes</a>
 
   </section>
 

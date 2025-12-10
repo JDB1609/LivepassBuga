@@ -5,6 +5,10 @@ import utils.User;
 import utils.PasswordUtil;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class UserDAO {
@@ -69,4 +73,27 @@ public class UserDAO {
         u.setPassHash(rs.getString("pass_hash"));
         return u;
     }
+    
+    public List<Map<String,Object>> obtenerUsuarios() throws Exception {
+        List<Map<String,Object>> lista = new ArrayList<>();
+        String sql = "SELECT id, name, email, phone, role FROM users";
+
+        try (Connection con = Conexion.getConexion();
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+
+            ResultSetMetaData meta = rs.getMetaData();
+            int cols = meta.getColumnCount();
+
+            while (rs.next()) {
+                Map<String,Object> fila = new LinkedHashMap<>();
+                for (int i=1; i<=cols; i++) {
+                    fila.put(meta.getColumnName(i), rs.getObject(i));
+                }
+                lista.add(fila);
+            }
+        }
+        return lista;
+    }
+
 }
