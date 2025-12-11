@@ -250,6 +250,7 @@
                 <li><a href="PaginaPrincipal.jsp" class="nav-link">Inicio</a></li>
                 <li><a href="ExplorarEventos.jsp" class="nav-link">Descubrir</a></li>
                 <li><a href="#" class="nav-link">Categorías</a></li>
+                <li><a href="Soporte.jsp" class="nav-link">Soporte</a></li>
             </ul>
 
             <!-- BOTONES SEGÚN SESIÓN -->

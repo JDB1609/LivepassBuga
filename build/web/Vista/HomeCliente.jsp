@@ -24,12 +24,16 @@
   Object _kTot = request.getAttribute("kpi_total");
   Object _kUp  = request.getAttribute("kpi_upcoming");
   Object _kRef = request.getAttribute("kpi_refunded");
-  String kTot = (_kTot!=null? String.valueOf(_kTot) : "–");
-  String kUp  = (_kUp !=null? String.valueOf(_kUp)  : "–");
-  String kRef = (_kRef!=null? String.valueOf(_kRef) : "–");
+  String kTot = (_kTot!=null? String.valueOf(_kTot) : "0");
+  String kUp  = (_kUp !=null? String.valueOf(_kUp)  : "0");
+  String kRef = (_kRef!=null? String.valueOf(_kRef) : "0");
 
   @SuppressWarnings("unchecked")
   List<String> recent = (List<String>) request.getAttribute("recent_activity");
+
+  // Flags simples para mensajes de UX
+  boolean hasTickets = !"0".equals(kTot);
+  boolean hasUpcoming = !"0".equals(kUp);
 %>
 
 <!DOCTYPE html>
@@ -131,6 +135,34 @@
       margin-top:1rem;
     }
 
+    /* Resumen de cuenta debajo del hero */
+    .account-strip{
+      margin-top:1rem;
+      padding:.65rem .8rem;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(120deg,rgba(7,10,24,.95),rgba(5,7,18,.98));
+      display:flex;
+      flex-wrap:wrap;
+      gap:.75rem;
+      align-items:center;
+      font-size:.78rem;
+    }
+    .account-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:.35rem;
+      padding:.2rem .6rem;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+    }
+    .account-pill span{
+      font-weight:700;
+    }
+    .account-status{
+      color:rgba(255,255,255,.72);
+    }
+
     /* Buscador */
     .search-bar{
       margin-top:1rem;
@@ -164,6 +196,27 @@
       font-size:.8rem;
       border:none;
       cursor:pointer;
+    }
+
+    .search-chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:.4rem;
+      margin-top:.6rem;
+      font-size:.72rem;
+    }
+    .search-chip{
+      border-radius:999px;
+      padding:.25rem .65rem;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.04);
+      color:rgba(255,255,255,.8);
+      text-decoration:none;
+      white-space:nowrap;
+    }
+    .search-chip:hover{
+      border-color:rgba(0,209,178,.7);
+      color:#fff;
     }
 
     /* ===== KPIs lado derecho ===== */
@@ -217,6 +270,14 @@
       background:rgba(255,255,255,.09);
       color:rgba(255,255,255,.78);
     }
+    .kpi-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:.25rem;
+      font-size:.7rem;
+      margin-top:.15rem;
+      color:rgba(0,255,196,.8);
+    }
 
     /* ===== Botones neutrales ===== */
     .btn-ghost{
@@ -240,7 +301,7 @@
       display:grid;
       gap:.9rem;
     }
-    @media(min-width:860px){
+    @media(min-width:900px){
       .quick-actions{
         grid-template-columns:repeat(4,minmax(0,1fr));
       }
@@ -255,6 +316,8 @@
       align-items:flex-start;
       cursor:pointer;
       transition:transform .15s, box-shadow .2s, border-color .18s;
+      text-decoration:none;
+      color:#fff;
     }
     .quick-action:hover{
       transform:translateY(-2px);
@@ -379,6 +442,11 @@
       font-size:.74rem;
       color:rgba(255,255,255,.7);
     }
+    .event-meta span{
+      display:inline-flex;
+      align-items:center;
+      gap:.3rem;
+    }
     .event-price{
       font-size:1.05rem;
       font-weight:900;
@@ -459,6 +527,22 @@
       gap:.35rem;
     }
 
+    .tips-inline{
+      margin-top:.6rem;
+      display:flex;
+      flex-wrap:wrap;
+      gap:.5rem;
+      font-size:.75rem;
+      color:rgba(255,255,255,.7);
+    }
+
+    .tips-inline span{
+      border-radius:999px;
+      padding:.2rem .55rem;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+    }
+
     /* PQRS mini form */
     .field label{
       display:block;
@@ -519,6 +603,31 @@
       color:rgba(255,255,255,.82);
     }
 
+    /* Acordeón FAQ dentro de ayuda */
+    .faq-accordion{
+      margin-top:.9rem;
+      font-size:.78rem;
+      color:rgba(255,255,255,.8);
+    }
+    .faq-accordion details{
+      background:rgba(255,255,255,.03);
+      border-radius:10px;
+      margin-bottom:.35rem;
+      padding:.45rem .6rem;
+      border:1px solid transparent;
+    }
+    .faq-accordion details[open]{
+      border-color:rgba(0,209,178,.7);
+      background:rgba(255,255,255,.04);
+    }
+    .faq-accordion summary{
+      cursor:pointer;
+      list-style:none;
+    }
+    .faq-accordion summary::-webkit-details-marker{
+      display:none;
+    }
+
     /* Animaciones */
     @keyframes fadeUp{
       from{opacity:0;transform:translateY(10px);}
@@ -544,6 +653,14 @@
     @keyframes rippleAnim{
       to{transform:scale(3);opacity:0;}
     }
+
+    /* Adaptaciones mobile */
+    @media(max-width:640px){
+      .hero-title{ font-size:1.6rem; }
+      .card-inner{ padding:16px 14px 14px; }
+      .panel-head, .panel-body{ padding-inline:12px; }
+      .quick-action{ padding:10px; }
+    }
   </style>
 </head>
 
@@ -564,9 +681,32 @@
             Hola, <%= (name != null ? name : "usuario") %> 👋
           </h1>
           <p class="hero-sub mt-2">
-            Aquí puedes buscar eventos, revisar tus tickets, ver tu actividad
-            y abrir PQRS en un solo lugar.
+            Desde aquí puedes encontrar nuevos eventos, gestionar tus tickets,
+            descargar comprobantes y abrir PQRS sin perderte de nada.
           </p>
+
+          <!-- Mini resumen de cuenta -->
+          <div class="account-strip">
+            <div class="account-status">
+              <strong>Estado de tu cuenta:</strong>
+              <% if (hasUpcoming) { %>
+                Tienes eventos próximos en tu agenda. 🎉
+              <% } else if (hasTickets) { %>
+                Tienes tickets activos, pero sin eventos próximos.
+              <% } else { %>
+                Aún no has comprado tickets. Empieza explorando eventos. 💜
+              <% } %>
+            </div>
+            <div class="account-pill">
+              <span><%= kTot %></span> tickets totales
+            </div>
+            <div class="account-pill">
+              <span><%= kUp %></span> eventos próximos
+            </div>
+            <div class="account-pill">
+              <span><%= kRef %></span> reembolsos
+            </div>
+          </div>
 
           <!-- Buscador de eventos / ticket -->
           <form class="search-bar" method="get"
@@ -581,6 +721,26 @@
             </button>
           </form>
 
+          <!-- Chips de búsqueda rápida -->
+          <div class="search-chips" aria-label="Filtros rápidos de búsqueda">
+            <a class="search-chip"
+               href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp?orden=proximos">
+              Próximos a ocurrir
+            </a>
+            <a class="search-chip"
+               href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp?tipo=concierto">
+              Conciertos
+            </a>
+            <a class="search-chip"
+               href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp?ciudad=Buga">
+              En Buga
+            </a>
+            <a class="search-chip"
+               href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp?precio=low">
+              Entradas económicas
+            </a>
+          </div>
+
           <!-- Acciones principales -->
           <div class="hero-actions">
             <a class="btn-primary ripple"
@@ -594,6 +754,10 @@
             <a class="btn-ghost ripple"
                href="<%= request.getContextPath() %>/Vista/HistorialCompras.jsp">
               Historial de compras
+            </a>
+            <a class="btn-ghost ripple"
+               href="<%= request.getContextPath() %>/Vista/PerfilCliente.jsp">
+              Editar perfil
             </a>
             <% if ("ORGANIZADOR".equalsIgnoreCase(String.valueOf(role))) { %>
               <a class="btn-ghost ripple"
@@ -612,12 +776,20 @@
           <div class="kpi-label">Tickets en tu cuenta</div>
           <div class="kpi-value"><%= kTot %></div>
           <div class="kpi-foot">Entradas adquiridas con tu correo.</div>
+          <% if (hasTickets) { %>
+            <div class="kpi-badge">🎫 Recuerda revisar la sección “Mis tickets”.</div>
+          <% } %>
         </div>
         <div class="kpi-card">
           <div class="kpi-pill">Próximos</div>
           <div class="kpi-label">Eventos pendientes</div>
           <div class="kpi-value text-aqua"><%= kUp %></div>
           <div class="kpi-foot">No los pierdas, revisa la fecha y lugar.</div>
+          <% if (hasUpcoming) { %>
+            <div class="kpi-badge">⏰ Te enviaremos recordatorios antes del evento.</div>
+          <% } else { %>
+            <div class="kpi-badge">✨ Explora nuevos eventos y arma tu agenda.</div>
+          <% } %>
         </div>
         <div class="kpi-card">
           <div class="kpi-pill">Reembolsos</div>
@@ -629,8 +801,9 @@
     </section>
 
     <!-- ===== ACCIONES RÁPIDAS ===== -->
-    <section class="quick-actions">
-      <a class="quick-action" href="<%= request.getContextPath() %>/Vista/MisTickets.jsp">
+    <section class="quick-actions" aria-label="Acciones rápidas">
+      <a class="quick-action"
+         href="<%= request.getContextPath() %>/Vista/MisTickets.jsp">
         <div class="qa-icon">🎫</div>
         <div>
           <div class="qa-title">Mostrar QR de entrada</div>
@@ -638,7 +811,8 @@
         </div>
       </a>
 
-      <a class="quick-action" href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">
+      <a class="quick-action"
+         href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">
         <div class="qa-icon">🎉</div>
         <div>
           <div class="qa-title">Explorar nuevos eventos</div>
@@ -646,7 +820,8 @@
         </div>
       </a>
 
-      <a class="quick-action" href="<%= request.getContextPath() %>/Vista/HistorialCompras.jsp">
+      <a class="quick-action"
+         href="<%= request.getContextPath() %>/Vista/HistorialCompras.jsp">
         <div class="qa-icon">📜</div>
         <div>
           <div class="qa-title">Descargar comprobantes</div>
@@ -654,11 +829,12 @@
         </div>
       </a>
 
-      <a class="quick-action" href="#pqrs-block">
-        <div class="qa-icon">🛟</div>
+      <a class="quick-action"
+         href="<%= request.getContextPath() %>/Vista/PerfilCliente.jsp">
+        <div class="qa-icon">👤</div>
         <div>
-          <div class="qa-title">Ayuda y PQRS</div>
-          <div class="qa-sub">Reporta un problema con tu compra.</div>
+          <div class="qa-title">Datos de tu perfil</div>
+          <div class="qa-sub">Actualiza correo, nombre y contraseña.</div>
         </div>
       </a>
     </section>
@@ -724,8 +900,8 @@
             </div>
             <div class="event-title"><%= ev.getTitle() %></div>
             <div class="event-meta">
-              📅 <%= dateStr %><br>
-              📍 <%= ev.getVenue()!=null ? ev.getVenue() : "" %>
+              <span>📅 <%= dateStr %></span><br>
+              <span>📍 <%= ev.getVenue()!=null ? ev.getVenue() : "Lugar por confirmar" %></span>
             </div>
             <div class="event-price"><%= ev.getPriceFormatted() %></div>
             <div class="event-actions">
@@ -768,14 +944,20 @@
         </div>
         <div class="panel-body">
           <p class="text-xs text-white/70">
-            Desde <b>Mis tickets</b> puedes mostrar el QR, transferir a otra persona
-            o descargar comprobantes.
+            Desde <b>Mis tickets</b> puedes mostrar el QR, transferir a otra persona,
+            descargar comprobantes y revisar el estado de cada entrada.
           </p>
 
           <div class="tips-list">
             <div>• Consulta la hora y puerta de acceso antes de salir de casa.</div>
             <div>• Si no vas a asistir, usa la opción <b>Transferir ticket</b>.</div>
             <div>• Revisa que el correo de confirmación no haya llegado a SPAM.</div>
+          </div>
+
+          <div class="tips-inline">
+            <span>QR legible con brillo máximo</span>
+            <span>Ten tu documento a la mano</span>
+            <span>Llega con anticipación</span>
           </div>
 
           <hr class="border-white/10 my-3">
@@ -867,6 +1049,31 @@
             <span class="faq-chip">Problema con el QR</span>
             <span class="faq-chip">Reembolso</span>
             <span class="faq-chip">Datos de facturación</span>
+          </div>
+
+          <!-- Mini FAQ expandible para UX -->
+          <div class="faq-accordion" aria-label="Preguntas frecuentes">
+            <details>
+              <summary>¿Cuánto tarda en llegar el correo de confirmación?</summary>
+              <p class="mt-1">
+                Normalmente llega en pocos minutos. Si no lo ves, revisa SPAM o la
+                pestaña de promociones de tu correo.
+              </p>
+            </details>
+            <details>
+              <summary>Mi QR no se lee en el punto de acceso</summary>
+              <p class="mt-1">
+                Sube el brillo de la pantalla, evita capturas borrosas y agranda el código.
+                Si el problema continúa, acércate al punto de información del evento.
+              </p>
+            </details>
+            <details>
+              <summary>¿Cómo solicito un reembolso?</summary>
+              <p class="mt-1">
+                Usa este formulario PQRS indicando la referencia de pago y el evento.
+                El organizador revisará tu caso según sus políticas de reembolso.
+              </p>
+            </details>
           </div>
         </div>
       </div>
