@@ -743,7 +743,7 @@ public class EventDAO {
         return out;
     }
     
-<<<<<<< HEAD
+
     public List<Event> listAllEvents() {
         StringBuilder sb = new StringBuilder(BASE_SELECT);
         sb.append(" GROUP BY e.id ORDER BY e.date_time ASC "); // Ordenados por fecha ascendente
@@ -835,7 +835,7 @@ public class EventDAO {
     
         
     
-=======
+
     public Event obtenerPorId(int idEvento) {
         Event ev = null;
         String sql = "SELECT id, organizer_id, title, categories, genre, type_events, venue, city, date_time, status, created_at, description, image FROM events WHERE id = ?";
@@ -875,5 +875,5 @@ public class EventDAO {
         return ev;
 
    }
->>>>>>> fd1eadad1232beac28a769115903fa105c313a54
+
 }
