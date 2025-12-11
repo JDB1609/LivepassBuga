@@ -743,6 +743,7 @@ public class EventDAO {
         return out;
     }
     
+<<<<<<< HEAD
     public List<Event> listAllEvents() {
         StringBuilder sb = new StringBuilder(BASE_SELECT);
         sb.append(" GROUP BY e.id ORDER BY e.date_time ASC "); // Ordenados por fecha ascendente
@@ -834,4 +835,45 @@ public class EventDAO {
     
         
     
+=======
+    public Event obtenerPorId(int idEvento) {
+        Event ev = null;
+        String sql = "SELECT id, organizer_id, title, categories, genre, type_events, venue, city, date_time, status, created_at, description, image FROM events WHERE id = ?";
+
+        try (Connection con = Conexion.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idEvento);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    ev = new Event();
+                    ev.setId(rs.getInt("id"));
+                    ev.setOrganizerId(rs.getLong("organizer_id"));
+                    ev.setTitle(rs.getString("title"));
+                    ev.setCategories(rs.getString("categories"));
+                    ev.setGenre(rs.getString("genre"));
+                    ev.setEventType(rs.getString("type_events"));
+                    ev.setVenue(rs.getString("venue"));
+                    ev.setCity(rs.getString("city"));
+
+                    // Mapeo de fecha y hora
+                    Timestamp ts = rs.getTimestamp("date_time");
+                    if (ts != null) {
+                        ev.setDateTime(ts.toLocalDateTime());
+                    }
+
+                    ev.setStatus(rs.getString("status"));
+                    ev.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                    ev.setDescription(rs.getString("description"));
+                    ev.setImage(rs.getString("image"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error obteniendo evento por ID: " + e.getMessage(), e);
+        }
+
+        return ev;
+
+   }
+>>>>>>> fd1eadad1232beac28a769115903fa105c313a54
 }

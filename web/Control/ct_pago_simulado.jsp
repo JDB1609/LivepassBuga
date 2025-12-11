@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
-<%@ page import="dao.EventDAO, utils.Event, utils.Conexion, dao.TicketDAO" %>
+<%@ page import="dao.EventDAO, utils.Event, utils.Conexion, dao.TicketDAO, dao.ReminderDAO" %>
 <%@ page import="java.sql.*, java.math.BigDecimal" %>
 
 <%!
@@ -220,6 +220,13 @@
       ps.setString(5, "Aprobado");
       ps.executeUpdate();
     }
+    
+    // Obtener el email del usuario desde sesión
+    String userEmail = (String) session.getAttribute("userEmail");
+
+    // Crear recordatorio automático
+    dao.ReminderDAO reminderDAO = new dao.ReminderDAO();
+    reminderDAO.crearRecordatorioCompra(userEmail, eventId);
 
     redirect = ctx + "/Vista/MisTickets.jsp?ok=1&ref=" +
                java.net.URLEncoder.encode(ref, "UTF-8");
