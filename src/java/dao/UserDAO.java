@@ -95,5 +95,41 @@ public class UserDAO {
         }
         return lista;
     }
+    
+    public List<User> listAllClients() {
+           List<User> clientes = new ArrayList<>();
+           String sql = "SELECT * FROM users WHERE role='CLIENTE'";
+           Conexion cx = new Conexion();
+           try (Connection cn = cx.getConnection();
+                PreparedStatement ps = cn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+               while (rs.next()) {
+                   clientes.add(map(rs));
+               }
+           } catch (Exception e) {
+               throw new RuntimeException(e);
+           }
+           return clientes;
+       }
+    
+    public List<User> listAllOrganizers() {
+            List<User> organizadores = new ArrayList<>();
+            String sql = "SELECT * FROM users WHERE role='ORGANIZADOR'";
+            Conexion cx = new Conexion();
+
+            try (Connection cn = cx.getConnection();
+                 PreparedStatement ps = cn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+                    organizadores.add(map(rs));
+                }
+
+            } catch (Exception e) {
+                throw new RuntimeException("Error listAllOrganizers", e);
+            }
+
+            return organizadores;
+        }    
 
 }

@@ -472,4 +472,31 @@ public class TicketDAO {
         finally { cx.cerrarConexion(); }
         return 0;
     }
+    
+    public List<Ticket> listAllTickets() {
+        String sql =
+            "SELECT t.*, e.title, e.venue, e.date_time " +
+            "FROM tickets t " +
+            "JOIN events e ON e.id = t.event_id " +
+            "ORDER BY e.date_time DESC, t.id DESC";
+
+        List<Ticket> tickets = new ArrayList<>();
+        Conexion cx = new Conexion();
+
+        try (Connection cn = cx.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                tickets.add(map(rs));
+            }
+
+        } catch (Exception ex) {
+            throw new RuntimeException("Error listAllTickets", ex);
+        } finally {
+            cx.cerrarConexion();
+        }
+
+        return tickets;
+    }    
 }

@@ -742,4 +742,96 @@ public class EventDAO {
 
         return out;
     }
+    
+    public List<Event> listAllEvents() {
+        StringBuilder sb = new StringBuilder(BASE_SELECT);
+        sb.append(" GROUP BY e.id ORDER BY e.date_time ASC "); // Ordenados por fecha ascendente
+
+        List<Event> out = new ArrayList<>();
+
+        try (Connection cn = new Conexion().getConnection();
+             PreparedStatement ps = cn.prepareStatement(sb.toString());
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                out.add(map(rs));
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error listAllEvents", e);
+        }
+
+        return out;
+    }
+    
+    public int countPending() {
+        String sql = "SELECT COUNT(*) FROM events WHERE status='PENDIENTE'";
+        Conexion cx = new Conexion();
+
+        try (Connection cn = cx.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            return (rs.next() ? rs.getInt(1) : 0);
+
+        } catch (Exception e) {
+            throw new RuntimeException("[DAO ERROR] countPending() con SQL:\n" + sql + "\nCausa: " + e.getMessage(), e);
+        }
+    }    
+    
+    public boolean aprobarEvento(int id, long adminId) {
+        String sql = "UPDATE events SET status = 'PUBLICADO' WHERE id = ?";
+        Conexion cx = new Conexion();
+        try (Connection conn = cx.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean rechazarEvento(int id, long adminId) {
+        String sql = "UPDATE events SET status = 'RECHAZADO' WHERE id = ?";
+        Conexion cx = new Conexion();
+        try (Connection conn = cx.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }    
+    
+    public List<Event> listPendingPaged(int limit, int offset) {
+        String sql = BASE_SELECT + " WHERE e.status='PENDIENTE' GROUP BY e.id ORDER BY e.date_time ASC LIMIT ? OFFSET ?";
+        List<Event> out = new ArrayList<>();
+        Conexion cx = new Conexion();
+
+        try (Connection cn = cx.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setInt(1, limit);
+            ps.setInt(2, offset);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) out.add(map(rs));
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("[DAO ERROR] listPendingPaged(limit="+limit+", offset="+offset+") con SQL:\n" + sql + "\nCausa: " + e.getMessage(), e);
+        }
+
+        return out;
+    }
+
+    
+        
+    
 }
