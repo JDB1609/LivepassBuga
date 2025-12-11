@@ -14,15 +14,15 @@ public class SoporteServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
-        
+
         request.setCharacterEncoding("UTF-8");
         response.setContentType("application/json; charset=UTF-8");
 
-        String nombre = request.getParameter("nombre");
-        String email = request.getParameter("email");
+        String nombre  = request.getParameter("nombre");
+        String email   = request.getParameter("email");
         String mensaje = request.getParameter("mensaje");
-        
+        String tipo    = request.getParameter("tipo"); // PQRS
+
         // Validación simple
         if (nombre == null || email == null || mensaje == null ||
             nombre.isEmpty() || email.isEmpty() || mensaje.isEmpty()) {
@@ -33,7 +33,14 @@ public class SoporteServlet extends HttpServlet {
             return;
         }
 
-        SoporteMensaje sm = new SoporteMensaje(nombre, email, mensaje);
+        if (tipo == null || tipo.trim().isEmpty()) {
+            tipo = "GENERAL";
+        }
+
+        // Prefijar el tipo en el mensaje que se guarda
+        String mensajeBD = "[" + tipo.toUpperCase() + "] " + mensaje;
+
+        SoporteMensaje sm = new SoporteMensaje(nombre, email, mensajeBD);
         SoporteDAO dao = new SoporteDAO();
 
         try {
@@ -47,11 +54,9 @@ public class SoporteServlet extends HttpServlet {
 
         } catch (Exception e) {
             // 👇 Captura el error real y lo devuelve al cliente
-            String errorMsg = e.getMessage().replace("\"", "'"); // evita romper el JSON
+            String errorMsg = (e.getMessage() != null ? e.getMessage() : "Error desconocido").replace("\"", "'");
             response.getWriter().write("{\"status\":\"error\", \"msg\":\"Error SQL: " + errorMsg + "\"}");
             e.printStackTrace(); // sigue mostrando en consola
         }
-
-       
     }
 }
