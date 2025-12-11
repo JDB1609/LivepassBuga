@@ -30,7 +30,7 @@ String msgType = request.getParameter("type");
 <html lang="es">
 <head>
 <title>Aprobación de Eventos</title>
-
+<%@ include file="../Includes/head_base_administrador.jspf" %>
 <style>
 /* --- TU CSS ORIGINAL COMPLETO (NO MODIFICADO) --- */
 
@@ -167,6 +167,15 @@ header{
     margin-top:15px;
 }
 
+.boton-morado, .boton-negro { border-radius: 12px; font-weight: 700; transition: .2s; }
+.boton-morado { background: #6c5ce7; color:white; }
+.boton-negro  { background: transparent; border:1px solid white; color:white; }
+.boton-morado:hover { filter: brightness(1.1); }
+.boton-negro:hover  { background: rgba(255,255,255,0.15); }
+.boton-mini { padding: 8px 14px; font-size: 0.85rem; }
+
+
+
 .btn-approve{
     flex:1;
     padding:10px;
@@ -239,16 +248,7 @@ header{
 <body>
 
 <header>
-    <div class="header-inner">
-        <a href="#" class="logo">
-            <span class="logo-dot"></span> Livepass <span style="color:#00d1b2;">Buga</span>
-        </a>
-
-        <a href="<%=request.getContextPath()%>/Vista/BackofficeAdministrador.jsp" 
-           class="center-link">← Volver al Dashboard</a>
-
-        <a href="<%=request.getContextPath()%>/Control/ct_logout_admin.jsp" class="logout">Salir</a>
-    </div>
+<%@ include file="../Includes/nav_base_administrador.jspf" %>
 </header>
 
 <div class="container">
@@ -278,17 +278,15 @@ header{
                 <div class="event-line">📍 <%= ev.getCity() %></div>
                 <div class="event-line">🏛 <%= ev.getVenue() %></div>
                 <div class="event-line">📅 <%= ev.getDate() %></div>
-                <div class="event-line">💲 <%= ev.getPriceFormatted() %></div>
-
                 <div class="event-desc"><%= ev.getDescription() %></div>
 
                 <div class="card-actions"> 
-                    <a class="btn-approve" 
+                    <a class="boton-morado boton-mini" 
                        href="<%= request.getContextPath() %>/Control/ct_Aprobacion_Eventos.jsp?id=<%= ev.getId() %>&accion=aprobar">
                        Aprobar
                     </a>
 
-                    <a class="btn-reject" 
+                    <a class="boton-negro boton-mini" 
                        href="<%= request.getContextPath() %>/Control/ct_Aprobacion_Eventos.jsp?id=<%= ev.getId() %>&accion=rechazar">
                        Rechazar
                     </a>

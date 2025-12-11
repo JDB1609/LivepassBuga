@@ -3,7 +3,10 @@ package dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 import utils.Conexion;
+import utils.ChartPoint;
 
 public class DashboardDAO {
 
@@ -96,5 +99,67 @@ public class DashboardDAO {
             e.printStackTrace();
         }
         return total;
+    }
+    
+    public List<ChartPoint> ticketsPorDia(int dias) {
+
+        List<ChartPoint> lista = new ArrayList<>();
+
+        String sql = 
+            "SELECT DATE(purchase_at) AS fecha, SUM(qty) AS total " +
+            "FROM tickets " +
+            "WHERE purchase_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) " +
+            "GROUP BY DATE(purchase_at) " +
+            "ORDER BY fecha ASC";
+
+        try (Connection cn = new Conexion().getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setInt(1, dias);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                String fecha = rs.getString("fecha");
+                int total = rs.getInt("total");
+
+                lista.add(new ChartPoint(fecha, total));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return lista;
+    }
+    
+    
+    public List<ChartPoint> ticketsPorEvento() {
+
+        List<ChartPoint> lista = new ArrayList<>();
+
+        String sql =
+            "SELECT e.title AS nombre, SUM(t.qty) AS total " +
+            "FROM tickets t " +
+            "JOIN events e ON e.id = t.event_id " +
+            "GROUP BY e.title " +
+            "ORDER BY total DESC";
+
+        try (Connection cn = new Conexion().getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                String nombre = rs.getString("nombre");
+                int total = rs.getInt("total");
+
+                lista.add(new ChartPoint(nombre, total));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return lista;
     }
 }

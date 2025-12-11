@@ -1,3 +1,4 @@
+<%@page import="utils.ChartPoint"%>
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ page import="java.util.*, dao.EventDAO, utils.Event, dao.DashboardDAO" %>
 
@@ -21,8 +22,13 @@
     int pageSize = 5;      // máximo 5 próximos eventos
     int offset   = 0;      // desde el primero
 
+    
     List<Event> pendientes = eventDAO.listPendingPaged(pageSize, offset);
 
+    List<ChartPoint> grafica1 = daodash.ticketsPorDia(7);
+    List<ChartPoint> grafica2 = daodash.ticketsPorEvento();    
+    request.setAttribute("grafica1", grafica1);
+    request.setAttribute("grafica2", grafica2);
     // Mensaje flash de eventos
     String msgEvento = (String) session.getAttribute("msgEvento");
     if (msgEvento != null) {
@@ -33,7 +39,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <%@ include file="../Includes/head_base.jspf" %>
+    <%@ include file="../Includes/head_base_administrador.jspf" %>
     <title>Panel — Administrador</title>
     <style>
       .metric { background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04)); border-radius: 18px; padding: 18px; box-shadow: 0 10px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04); transition: transform .15s; }
@@ -54,20 +60,7 @@
 
 <body class="text-white font-sans bg-[#0b0e16]">
 <header class="sticky top-0 z-30 backdrop-blur bg-[#0b0e16] border-b border-white/10">
-  <div class="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
-    <a href="#" class="flex items-center gap-2 font-extrabold tracking-tight">
-      <span class="inline-block w-3 h-3 rounded-sm" style="background:#00d1b2"></span> Livepass <span class="text-aqua">Buga</span>
-    </a>
-    <nav class="hidden sm:flex items-center gap-5 text-white/80">
-      <span class="inline-block w-3 h-3 rounded-sm" style="background:#00d1b2">Listados</span>
-      <a href="ListarTodosClientes.jsp" class="hover:text-white transition">Clientes</a>
-      <a href="ListarTodosOrganizadores.jsp" class="hover:text-white transition">Organizadores</a>
-      <a href="ListarTodosEventos.jsp" class="hover:text-white transition">Eventos</a>
-      <a href="ListarTodosTickets.jsp" class="hover:text-white transition">Tickets</a>
-      <a href="<%= request.getContextPath() %>/Control/ct_logout_admin.jsp"
-         class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30">Salir</a>
-    </nav>
-  </div>
+  <%@ include file="../Includes/nav_base_administrador.jspf" %>
 </header>
 
 <main class="max-w-6xl mx-auto px-5 py-10">
@@ -98,6 +91,133 @@
     <div class="metric"><div class="text-white/70">Total comisiones (10%)</div><div class="k">$<%= totalComisiones %></div></div>
   </section>
 
+  <!-- === INICIO GRÁFICAS === -->
+  <section class="mt-14 grid md:grid-cols-2 gap-6">
+
+      <!-- GRÁFICA 1: Tickets vendidos por mes -->
+      <div class="glass rounded-2xl p-6 ring">
+          <h2 class="text-lg font-bold mb-3">Tickets Vendidos (Simulado)</h2>
+          <canvas id="chartTickets"></canvas>
+      </div>
+
+      <!-- GRÁFICA 2: Comisiones generadas por mes -->
+      <div class="glass rounded-2xl p-6 ring">
+          <h2 class="text-lg font-bold mb-3">Comisiones Mensuales (Simulado)</h2>
+          <canvas id="chartComisiones"></canvas>
+      </div>
+
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+      // === GRÁFICA 1: Tickets Vendidos (REAL) ===
+      const ctx1 = document.getElementById("chartTickets");
+
+      const labels1 = [
+        <% 
+          List<utils.ChartPoint> graficaTickets = (List<utils.ChartPoint>) request.getAttribute("grafica1");
+          if (graficaTickets != null) {
+            for (utils.ChartPoint p : graficaTickets) { 
+        %>
+          "<%= p.getLabel() %>",
+        <% 
+            }
+          }
+        %>
+      ];
+
+      const data1 = [
+        <% 
+          if (graficaTickets != null) {
+            for (utils.ChartPoint p : graficaTickets) { 
+        %>
+          <%= p.getValue() %>,
+        <% 
+            }
+          }
+        %>
+      ];
+
+      new Chart(ctx1, {
+        type: "line",
+        data: {
+          labels: labels1,
+          datasets: [{
+            label: "Tickets Vendidos",
+            data: data1,
+            borderColor: "rgba(106,106,255,0.8)",
+            backgroundColor: "rgba(106,106,255,0.25)",
+            borderWidth: 2,
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: "white" } } },
+          scales: {
+            x: { ticks: { color: "white" } },
+            y: { ticks: { color: "white" } }
+          }
+        }
+      });
+
+
+      // === GRÁFICA 2: Tickets x Evento (REAL) ===
+      const ctx2 = document.getElementById("chartComisiones");
+
+      const labels2 = [
+        <% 
+          List<utils.ChartPoint> graficaComisiones = (List<utils.ChartPoint>) request.getAttribute("grafica2");
+          if (graficaComisiones != null) {
+            for (utils.ChartPoint p : graficaComisiones) { 
+        %>
+          "<%= p.getLabel() %>",
+        <% 
+            }
+          }
+        %>
+      ];
+
+      const data2 = [
+        <% 
+          if (graficaComisiones != null) {
+            for (utils.ChartPoint p : graficaComisiones) {
+        %>
+          <%= p.getValue() %>,
+        <% 
+            }
+          }
+        %>
+      ];
+
+      new Chart(ctx2, {
+        type: "bar",
+        data: {
+          labels: labels2,
+          datasets: [{
+            label: "Comisiones / Tickets por Evento",
+            data: data2,
+            backgroundColor: "rgba(255,99,132,0.45)",
+            borderColor: "rgba(255,99,132,1)",
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: "white" } } },
+          scales: {
+            x: { ticks: { color: "white" } },
+            y: { ticks: { color: "white" } }
+          }
+        }
+      });
+    </script> 
+
+  
+  
+  
+  
   <!-- Eventos pendientes -->
   <section class="mt-14 glass rounded-2xl p-6 ring">
     <h2 class="text-xl font-bold mb-2">Eventos pendientes</h2>

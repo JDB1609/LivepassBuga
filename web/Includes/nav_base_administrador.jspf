@@ -1,64 +1,253 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
+
 <%
-  String __ctx = request.getContextPath();
+    String __ctx = request.getContextPath();
+    Long __uid = (Long) session.getAttribute("adminId");
+    String __name = (String) session.getAttribute("adminNombre");
+    boolean __isAdmin = (__uid != null);
+    String __uri = request.getRequestURI();
+    boolean __isDashboard = __uri.endsWith("/BackofficeAdministrador.jsp");    
 %>
 
-<style>
-  #admin-nav .bar{ height:64px; transition:height .22s ease, background .22s ease }
-  #admin-nav .nav-link{ position:relative; font-weight:700; color:rgba(255,255,255,.82) }
-  #admin-nav .nav-link:hover{ color:#fff }
-  #admin-nav .nav-link::after{
-    content:""; position:absolute; left:0; right:0; bottom:-6px; height:2px;
-    background:linear-gradient(90deg,#6c5ce7,#00d1b2); transform:scaleX(0);
-    transform-origin:left; transition:transform .25s ease;
-  }
-  #admin-nav .nav-link.is-active::after,
-  #admin-nav .nav-link:hover::after{ transform:scaleX(1) }
-</style>
+<header id="lp-nav" class="sticky top-0 z-40">
+  <div class="bar border-b border-white/10 backdrop-blur">
+    <div class="max-w-6xl mx-auto px-5 h-full flex items-center">
 
-<header id="admin-nav" class="sticky top-0 z-40">
-  <div class="bar border-b border-white/10 backdrop-blur bg-[rgba(11,14,22,.72)]">
-    <div class="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+      <!-- IZQUIERDA: Hamburguesa + Logo -->
+      <div class="flex items-center gap-3">
+        <button id="hamb" class="hamb" aria-label="Abrir menú" aria-controls="drawer" aria-expanded="false">
+          <i></i>
+        </button>
 
-      <!-- LOGO -->
-      <a href="<%=__ctx%>/Vista/Admin/PanelAdmin.jsp"
-         class="flex items-center gap-2 font-extrabold tracking-tight text-white">
-        <span class="inline-block w-3 h-3 rounded-sm bg-[#00d1b2]"></span>
-        Livepass <span class="text-aqua">Admin</span>
-      </a>
-
-      <!-- LINKS -->
-      <nav class="flex items-center gap-6">
-        <a href="<%=__ctx%>/Vista/Admin/PanelAdmin.jsp" class="nav-link" data-nav="panel">Panel</a>
-        <a href="<%=__ctx%>/Vista/Admin/Administradores.jsp" class="nav-link" data-nav="admins">Administradores</a>
-        <a href="<%=__ctx%>/Vista/Admin/Clientes.jsp" class="nav-link" data-nav="clientes">Clientes</a>
-        <a href="<%=__ctx%>/Vista/Admin/Organizadores.jsp" class="nav-link" data-nav="orgs">Organizadores</a>
-        <a href="<%=__ctx%>/Vista/Admin/Eventos.jsp" class="nav-link" data-nav="eventos">Eventos</a>
-        <a href="<%=__ctx%>/Vista/Admin/Tickets.jsp" class="nav-link" data-nav="tickets">Tickets</a>
-
-        <!-- SALIR -->
-        <a href="<%=__ctx%>/Control/ct_logout_admin.jsp"
-           class="px-4 py-2 rounded-xl border border-white/20 hover:border-white/40">
-           Salir
+                  
+        <!-- LOGO -->
+        <a href="" class="brand-wrapper select-none">
+          <img src="<%=__ctx%>/Imagenes/Livepass Buga Logo.png"
+              alt="LivePassBuga"
+              class="brand-logo" draggable="false">
         </a>
-      </nav>
+        <% if (!__isDashboard) { %>
+          <a href="<%=__ctx%>/Vista/BackofficeAdministrador.jsp"
+            class="md:hidden ml-2 text-sm font-semibold text-white opacity-90 hover:opacity-100">
+            ← Volver a Dashboard
+          </a>
+        <% } %>
+      </div>
+
+    <!-- CENTRO: Links de navegación -->
+    <nav class="hidden md:flex items-center gap-6 mx-auto">
+
+        <% if (!__isDashboard) { %>
+
+            <!-- SOLO aparece en las páginas que NO son el Dashboard -->
+            <a href="<%=__ctx%>/Vista/BackofficeAdministrador.jsp" class="nav-link">
+                ← Volver al Dashboard
+            </a>
+
+        <% } %>
+
+    </nav>
+
+      <!-- DERECHA: Menú Usuario -->
+      <div class="hidden md:flex items-center gap-2">
+        <% if (!__isAdmin) { %>
+
+          <!-- Si no hay admin logueado -->
+          <a href="<%=__ctx%>/Vista/LoginAdministrador.jsp"
+            class="px-4 py-2 rounded-xl border border-white/18 hover:border-white/35 text-sm font-semibold transition">
+            Ingresar
+          </a>
+
+        <% } else { %>
+
+          <!-- Dropdown Usuario -->
+          <div class="relative">
+            <button id="userMenuBtn"
+              class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 hover:border-white/25 text-sm"
+              aria-haspopup="menu" aria-expanded="false" aria-controls="userMenu">
+              <span class="avatar" aria-hidden="true"></span>
+              <span class="font-semibold max-w-[160px] truncate">
+                <%= (__name != null ? __name : "Administrador") %>
+              </span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="opacity-80" aria-hidden="true">
+                <path d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+
+            <div id="userMenu"
+              class="menu hidden absolute right-0 mt-2 rounded-xl border border-white/10 bg-[rgba(10,12,20,.98)] shadow-xl"
+              role="menu">
+
+              <a href="<%=__ctx%>/Vista/BackofficeAdministrador.jsp" class="block px-4 py-2 hover:bg-white/10 text-sm">Panel</a>
+
+              <div class="h-px bg-white/10 my-1"></div>
+
+              <a href="<%=__ctx%>/Control/ct_logout_admin.jsp"
+                 class="block px-4 py-2 text-pink-200 hover:bg-white/10 text-sm">
+                Cerrar sesión
+              </a>
+            </div>
+          </div>
+
+        <% } %>
+      </div>
 
     </div>
   </div>
+
+  <!-- MENU MÓVIL -->
+
+    <div id="drawer"
+         class="drawer hidden bg-[rgba(10,12,20,.97)] border-r border-white/10 w-64 h-screen fixed top-0 left-0 z-50 p-6">
+
+    <!-- BOTÓN PARA CERRAR -->
+      <button id="closeDrawer"
+              class="mb-6 text-white text-xl font-bold flex items-center gap-2">
+        ✕ Cerrar
+      </button>        
+      <h3 class="text-white text-xl font-bold mb-6">Menú</h3>
+
+      <nav class="flex flex-col gap-4">
+
+        <a href="<%=__ctx%>/Vista/AprobacionEventos.jsp" class="nav-link">
+          Aceptar / Rechazar Evento
+        </a>
+
+        <a href="<%=__ctx%>/Vista/CrearAdministrador.jsp" class="nav-link">
+          Crear Administrador
+        </a>
+
+        <a href="<%=__ctx%>/Vista/SoporteAdministrador.jsp" class="nav-link">
+          Responder PQRS
+        </a>
+
+        <a href="<%=__ctx%>/Vista/ListarEditarAdministrador.jsp" class="nav-link">
+          Listar / Editar Administradores
+        </a>
+
+        <a href="<%=__ctx%>/Vista/ListarTodosClientes.jsp" class="nav-link">
+          Listar Clientes
+        </a>
+
+        <a href="<%=__ctx%>/Vista/ListarTodosOrganizadores.jsp" class="nav-link">
+          Listar Organizadores
+        </a>
+
+        <a href="<%=__ctx%>/Vista/ListarTodosEventos.jsp" class="nav-link">
+          Listar Eventos
+        </a>
+
+        <a href="<%=__ctx%>/Vista/ListarTodosTickets.jsp" class="nav-link">
+          Listar Tickets
+        </a>
+
+        <a href="<%=__ctx%>/Vista/Reportes.jsp" class="nav-link">
+          Reportes
+        </a>
+
+        <div class="h-px bg-white/10 my-3"></div>
+
+        <a href="<%=__ctx%>/Control/ct_logout_admin.jsp"
+           class="px-4 py-2 rounded-xl text-pink-200 border border-white/20 text-center">
+          Cerrar sesión
+        </a>
+
+      </nav>
+    </div>
 </header>
 
 <script>
-  // Marca opción activa
-  (function(){
-    var p = location.pathname.toLowerCase();
-    document.querySelectorAll('#admin-nav [data-nav]').forEach(function(a){
-      var k = a.getAttribute('data-nav');
-      if (k==='panel'    && p.includes('paneladmin')) a.classList.add('is-active');
-      if (k==='admins'   && p.includes('administradores')) a.classList.add('is-active');
-      if (k==='clientes' && p.includes('clientes')) a.classList.add('is-active');
-      if (k==='orgs'     && p.includes('organizadores')) a.classList.add('is-active');
-      if (k==='eventos'  && p.includes('eventos')) a.classList.add('is-active');
-      if (k==='tickets'  && p.includes('tickets')) a.classList.add('is-active');
+  const btn = document.getElementById("hamb");
+  const drawer = document.getElementById("drawer");
+
+  btn?.addEventListener("click", () => {
+    drawer.classList.toggle("hidden");
+  });
+
+  const userBtn = document.getElementById("userMenuBtn");
+  const userMenu = document.getElementById("userMenu");
+
+  userBtn?.addEventListener("click", () => {
+    userMenu.classList.toggle("hidden");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!userBtn?.contains(e.target) && !userMenu?.contains(e.target)) {
+      userMenu?.classList.add("hidden");
+    }
+  });
+  
+    const closeBtn = document.getElementById("closeDrawer");
+    closeBtn?.addEventListener("click", () => {
+      drawer.classList.add("hidden");
     });
-  })();
+ 
 </script>
+
+<style>
+  .nav-link { 
+    color: #fff;
+    opacity: .85;
+    font-weight: 500;
+    transition: .2s;
+  }
+  .nav-link:hover {
+    opacity: 1;
+    color: #684DFF;
+  }
+  
+    /* BOTÓN HAMBURGUESA */
+    .hamb {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .hamb i {
+      position: relative;
+      width: 18px;
+      height: 2px;
+      background: white;
+      display: block;
+      transition: 0.25s;
+    }
+
+    .hamb i::before,
+    .hamb i::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 18px;
+      height: 2px;
+      background: white;
+      transition: 0.25s;
+    }
+
+    .hamb i::before {
+      top: -6px;
+    }
+
+    .hamb i::after {
+      top: 6px;
+    }
+
+    /* ANIMACIÓN CUANDO SE ABRE */
+    .hamb.is-open i {
+      background: transparent;
+    }
+
+    .hamb.is-open i::before {
+      transform: rotate(45deg);
+      top: 0;
+    }
+
+    .hamb.is-open i::after {
+      transform: rotate(-45deg);
+      top: 0;
+    }
+</style>
