@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
-<%@ page import="java.util.*, dao.EventDAO, utils.Event" %>
+<%@ page import="java.util.*, dao.EventDAO, utils.Event, dao.DashboardDAO" %>
 
 <%
     Long uid  = (Long) session.getAttribute("adminId");
@@ -10,12 +10,12 @@
     if (role == null || !"admin".equalsIgnoreCase(role)) {
         response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp"); return;
     }
-
-    int totalUsuarios = 0;
-    int totalOrganizadores = 0;
-    int totalEventos = 0;
-    int totalTickets = 0;
-    int totalComisiones = 0;
+    DashboardDAO daodash= new DashboardDAO();
+    int totalUsuarios = daodash.totalUsuarios();;
+    int totalOrganizadores = daodash.totalOrganizadores();
+    int totalEventos = daodash.totalEventos();
+    int totalTickets = daodash.totalTickets();
+    double totalComisiones = daodash.totalComisiones();
 
     EventDAO eventDAO = new EventDAO();
     int pageSize = 5;      // máximo 5 próximos eventos
