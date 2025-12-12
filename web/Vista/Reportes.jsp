@@ -2,12 +2,12 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <%@ include file="../Includes/head_base.jspf" %>
+  <%@ include file="../Includes/head_base_administrador.jspf" %>
   <title>Reportes — Livepass Buga</title>
   <link rel="stylesheet" href="<%= request.getContextPath() %>/css/estilos.css">
 </head>
 <body>
-  <%@ include file="../Includes/nav_base.jspf" %>
+  <%@ include file="../Includes/nav_base_administrador.jspf" %>
 
   <main class="relative px-6 py-10">
     <h1 class="titulo text-4xl font-bold mb-6">Reportes</h1>
