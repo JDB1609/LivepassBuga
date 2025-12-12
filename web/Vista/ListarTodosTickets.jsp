@@ -128,10 +128,6 @@
                             <%= t.getPurchaseAt() != null ? t.getPurchaseAt() : "" %>
                         </p>
 
-                        <% if (t.getSeat() != null && !t.getSeat().isEmpty()) { %>
-                            <p><b>Asiento:</b> <%= t.getSeat() %></p>
-                        <% } %>
-
                         <% if (t.getQrCode() != null && !t.getQrCode().isEmpty()) { %>
                             <p><b>QR:</b> <%= t.getQrCode() %></p>
                         <% } %>

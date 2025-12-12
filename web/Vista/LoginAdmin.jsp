@@ -102,7 +102,8 @@
             <!-- Botones en la misma fila -->
             <div class="flex gap-4">
                 <!-- Botón regresar -->
-                <a href="PaginaPrincipal.jsp"
+
+                <a href="${pageContext.request.contextPath}/Vista/PaginaPrincipal.jsp"
                    class="flex-1 py-3 rounded-lg border border-#00E0C6 text-white font-semibold text-center hover:bg-white hover:text-black transition">
                    Menú Principal
                 </a>
