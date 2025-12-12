@@ -4,491 +4,991 @@
 <%@ page import="utils.Conexion, java.sql.Connection, java.sql.PreparedStatement, java.sql.ResultSet" %>
 
 <%
-  // --- Guard session ---
-  Integer uid = (Integer) session.getAttribute("userId");
-  if (uid == null) { response.sendRedirect(request.getContextPath()+"/Vista/Login.jsp"); return; }
+    // --- Guard session ---
+    Integer uid = (Integer) session.getAttribute("userId");
+    if (uid == null) {
+        response.sendRedirect(request.getContextPath()+"/Vista/Login.jsp");
+        return;
+    }
 
-  // --- Params ---
-  int eventId = 0, qty = 1, ticketTypeId = 0;
-  try { eventId      = Integer.parseInt(request.getParameter("eventId")); }      catch(Exception ignore){}
-  try { qty          = Math.max(1, Integer.parseInt(request.getParameter("qty"))); } catch(Exception ignore){}
-  try { ticketTypeId = Integer.parseInt(request.getParameter("ticketTypeId")); } catch(Exception ignore){}
-  if (eventId <= 0) { response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp"); return; }
+    // --- Params ---
+    int eventId = 0, qty = 1, ticketTypeId = 0;
+    try { eventId      = Integer.parseInt(request.getParameter("eventId")); }      catch(Exception ignore){}
+    try { qty          = Math.max(1, Integer.parseInt(request.getParameter("qty"))); } catch(Exception ignore){}
+    try { ticketTypeId = Integer.parseInt(request.getParameter("ticketTypeId")); } catch(Exception ignore){}
+    if (eventId <= 0) {
+        response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp");
+        return;
+    }
 
-  // --- Data evento ---
-  Event ev = new EventDAO().findById(eventId).orElse(null);
-  if (ev == null) { response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp"); return; }
+    // --- Data evento ---
+    Event ev = new EventDAO().findById(eventId).orElse(null);
+    if (ev == null) {
+        response.sendRedirect(request.getContextPath()+"/Vista/PaginaPrincipal.jsp");
+        return;
+    }
 
-  // === Cargar tipo de ticket / aforo elegido ===
-  String ticketTypeName = "General";
-  BigDecimal unit = BigDecimal.ZERO;
+    // === Cargar tipo de ticket / aforo elegido ===
+    String ticketTypeName = "GENERAL";
+    BigDecimal unit = BigDecimal.ZERO;
 
-  try {
-      Conexion cx = new Conexion();
-      String sql;
-      if (ticketTypeId > 0) {
-          sql = "SELECT id, name, price FROM ticket_types WHERE id = ? AND id_event = ? LIMIT 1";
-      } else {
-          sql = "SELECT id, name, price FROM ticket_types " +
-                "WHERE id_event = ? ORDER BY price ASC LIMIT 1";
-      }
+    try {
+        Conexion cx = new Conexion();
+        String sql;
+        if (ticketTypeId > 0) {
+            sql = "SELECT id, name, price FROM ticket_types WHERE id = ? AND id_event = ? LIMIT 1";
+        } else {
+            sql = "SELECT id, name, price FROM ticket_types " +
+                  "WHERE id_event = ? ORDER BY price ASC LIMIT 1";
+        }
 
-      try (Connection cn = cx.getConnection();
-           PreparedStatement ps = cn.prepareStatement(sql)) {
+        try (Connection cn = cx.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
 
-          if (ticketTypeId > 0) {
-              ps.setInt(1, ticketTypeId);
-              ps.setInt(2, eventId);
-          } else {
-              ps.setInt(1, eventId);
-          }
+            if (ticketTypeId > 0) {
+                ps.setInt(1, ticketTypeId);
+                ps.setInt(2, eventId);
+            } else {
+                ps.setInt(1, eventId);
+            }
 
-          try (ResultSet rs = ps.executeQuery()) {
-              if (rs.next()) {
-                  ticketTypeId   = rs.getInt("id");
-                  String n       = rs.getString("name");
-                  ticketTypeName = (n != null && !n.isEmpty()) ? n : ticketTypeName;
-                  unit           = rs.getBigDecimal("price");
-              }
-          }
-      }
-      cx.cerrarConexion();
-  } catch (Exception e) {
-      e.printStackTrace();
-  }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    ticketTypeId   = rs.getInt("id");
+                    String n       = rs.getString("name");
+                    ticketTypeName = (n != null && !n.isEmpty()) ? n : ticketTypeName;
+                    unit           = rs.getBigDecimal("price");
+                }
+            }
+        }
+        cx.cerrarConexion();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
 
-  // Fallback si no se encontró ticket_type
-  if (unit == null || unit.compareTo(BigDecimal.ZERO) <= 0) {
-      unit = (ev.getPriceValue() != null) ? ev.getPriceValue() : BigDecimal.ZERO;
-  }
+    // Fallback si no se encontró ticket_type
+    if (unit == null || unit.compareTo(BigDecimal.ZERO) <= 0) {
+        unit = (ev.getPriceValue() != null) ? ev.getPriceValue() : BigDecimal.ZERO;
+    }
 
-  BigDecimal total = unit.multiply(BigDecimal.valueOf(qty));
+    BigDecimal total = unit.multiply(BigDecimal.valueOf(qty));
+    NumberFormat COP = NumberFormat.getCurrencyInstance(new Locale("es","CO"));
+    String err = request.getParameter("err");
 
-  NumberFormat COP = NumberFormat.getCurrencyInstance(new Locale("es","CO"));
-  String err = request.getParameter("err");
+    // Imagen del evento
+    String img = null, imgAlt = null, imgSrc = null;
+    try { img = ev.getImage(); } catch(Exception ignore){}
+    try { imgAlt = ev.getImageAlt(); } catch(Exception ignore){}
+    if (imgAlt == null || imgAlt.trim().isEmpty()) imgAlt = ev.getTitle();
+
+    if (img != null && !img.trim().isEmpty()) {
+        if (img.startsWith("http://") || img.startsWith("https://")) {
+            imgSrc = img;
+        } else {
+            imgSrc = request.getContextPath() + "/" + img;
+        }
+    } else {
+        // fallback
+        imgSrc = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1000&q=80";
+    }
 %>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <%@ include file="../Includes/head_base.jspf" %>
-  <title>Pagar — <%= ev.getTitle() %></title>
-  <style>
-    .glassx{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);border-radius:16px}
-    .crumbs a{opacity:.8} .crumbs a:hover{opacity:1; text-decoration:underline}
-    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-    .step{padding:10px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);text-align:center;font-weight:700}
-    .step.is-active{border-color:rgba(0,209,178,.6);background:rgba(0,209,178,.12)}
-    .muted{color:rgba(255,255,255,.72)}
-    .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent);margin:12px 0}
+    <%@ include file="../Includes/head_base.jspf" %>
+    <title>Pagar — <%= ev.getTitle() %></title>
 
-    .input{
-      width:100%;padding:.85rem 1rem;border-radius:12px;background:transparent;
-      border:1px solid rgba(255,255,255,.15);color:#fff;outline:none;
-      font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      letter-spacing:.02em;
-    }
-    .input:focus{border-color:rgba(255,255,255,.30)}
-    .error{font-size:.8rem;color:#ff9aa2;display:none}
-    .field.invalid .error{display:block}
-    .field.invalid .input{border-color:#ff9aa2}
+    <style>
+        body{
+            background: radial-gradient(circle at top,#181b34 0,#050712 40%,#02030a 100%);
+        }
 
-    .pm-wrap{display:grid;gap:10px;grid-template-columns:repeat(4, minmax(140px,1fr))}
-    @media (max-width: 860px){ .pm-wrap{grid-template-columns:repeat(2,minmax(160px,1fr));} }
-    @media (max-width: 420px){ .pm-wrap{grid-template-columns:1fr;} }
-    .pm{
-      display:flex;align-items:center;justify-content:center;gap:.5rem;
-      height:46px;border:1px solid rgba(255,255,255,.15);border-radius:12px;
-      background:rgba(255,255,255,.05);opacity:.9;cursor:pointer;user-select:none;
-      transition:border-color .15s, box-shadow .15s, opacity .15s;
-    }
-    .pm:focus-within{ outline:2px solid rgba(255,255,255,.12); outline-offset:2px; }
-    .pm.active{border-color:rgba(0,209,178,.6);opacity:1;box-shadow:0 0 0 2px rgba(0,209,178,.15) inset}
-    .pm input{display:none}
+        .shell{
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 2.2rem 1.5rem 3rem;
+        }
+        @media(min-width:1024px){
+            .shell{ padding-inline:0; }
+        }
 
-    .sticky{position:sticky;top:88px}
+        .glassx{
+            border-radius:18px;
+            border:1px solid rgba(255,255,255,.12);
+            background:linear-gradient(145deg,rgba(17,19,36,.96),rgba(7,8,20,.98));
+            box-shadow:0 22px 70px rgba(0,0,0,.75);
+        }
 
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:70}
-    .modal.show{display:flex}
-    .modal .backdrop{position:absolute;inset:0;background:rgba(10,12,18,.65);backdrop-filter:blur(3px)}
-    .modal .content{position:relative;z-index:1;width:min(92vw,560px);border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(20,24,34,.98);padding:18px}
-    .chip{display:inline-block;padding:.25rem .6rem;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);font-weight:700;font-size:.85rem}
-  </style>
+        .crumbs a{opacity:.8}
+        .crumbs a:hover{opacity:1;text-decoration:underline}
+        .steps{
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:8px;
+        }
+        .step{
+            padding:9px 8px;
+            border-radius:999px;
+            border:1px solid rgba(255,255,255,.14);
+            background:rgba(255,255,255,.04);
+            text-align:center;
+            font-size:.8rem;
+            font-weight:700;
+        }
+        .step.is-active{
+            border-color:rgba(0,209,178,.85);
+            background:linear-gradient(135deg,rgba(0,209,178,.2),rgba(123,97,255,.15));
+        }
+
+        .muted{color:rgba(255,255,255,.76)}
+        .divider{
+            height:1px;
+            margin:14px 0;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);
+        }
+
+        /* Floating fields */
+        .field{
+            position:relative;
+        }
+        .field-label{
+            position:absolute;
+            left:1rem;
+            top:50%;
+            transform:translateY(-50%);
+            font-size:.8rem;
+            color:rgba(255,255,255,.58);
+            pointer-events:none;
+            transition:all .16s ease;
+        }
+        .input{
+            width:100%;
+            padding:1.1rem 1rem .45rem;
+            border-radius:12px;
+            border:1px solid rgba(255,255,255,.18);
+            background:rgba(8,10,20,.95);
+            color:#fff;
+            outline:none;
+            font-size:.9rem;
+            font-variant-numeric: tabular-nums;
+        }
+        .input::placeholder{color:transparent;}
+        .input:focus{
+            border-color:rgba(0,209,178,.85);
+            box-shadow:0 0 0 1px rgba(0,209,178,.8);
+        }
+        .field.filled .field-label,
+        .input:focus + .field-label{
+            top:.55rem;
+            font-size:.7rem;
+            color:rgba(0,209,178,.9);
+        }
+
+        .error{
+            font-size:.78rem;
+            color:#ff9aa2;
+            display:none;
+            margin-top:.15rem;
+        }
+        .field.touched.invalid .error{display:block;}
+        .field.touched.invalid .input{
+            border-color:#ff9aa2;
+            box-shadow:0 0 0 1px rgba(255,154,162,.65);
+        }
+
+        .pm-wrap{
+            display:grid;
+            grid-template-columns:repeat(4,minmax(130px,1fr));
+            gap:.6rem;
+        }
+        @media(max-width:860px){
+            .pm-wrap{grid-template-columns:repeat(2,minmax(140px,1fr));}
+        }
+        @media(max-width:480px){
+            .pm-wrap{grid-template-columns:1fr;}
+        }
+        .pm{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:.6rem;
+            height:48px;
+            border-radius:13px;
+            border:1px solid rgba(255,255,255,.18);
+            background:radial-gradient(circle at top left,rgba(255,255,255,.06),rgba(0,0,0,.6));
+            cursor:pointer;
+            user-select:none;
+            font-size:.9rem;
+            font-weight:700;
+            opacity:.85;
+            transition:border-color .16s,box-shadow .16s,opacity .16s,transform .14s;
+        }
+        .pm-icon{
+            width:22px;height:22px;border-radius:8px;
+            display:grid;place-items:center;
+            background:rgba(0,0,0,.55);
+            font-size:1.1rem;
+        }
+        .pm input{display:none;}
+        .pm.active{
+            opacity:1;
+            border-color:rgba(0,209,178,.9);
+            box-shadow:0 0 0 1px rgba(0,209,178,.7),0 14px 40px rgba(0,0,0,.65);
+            transform:translateY(-1px);
+            background:radial-gradient(circle at top left,rgba(0,209,178,.35),rgba(16,18,36,.95));
+        }
+
+        .sticky{position:sticky;top:96px;}
+
+        .small-badge{
+            display:inline-flex;
+            align-items:center;
+            gap:.35rem;
+            padding:.2rem .55rem;
+            border-radius:999px;
+            border:1px solid rgba(255,255,255,.2);
+            background:rgba(0,0,0,.45);
+            font-size:.72rem;
+        }
+        .small-badge span{
+            width:7px;height:7px;border-radius:999px;
+            background:#00d1b2;
+            box-shadow:0 0 0 3px rgba(0,209,178,.35);
+        }
+
+        .ticket-chip{
+            display:inline-flex;
+            align-items:center;
+            gap:.35rem;
+            padding:.25rem .65rem;
+            border-radius:999px;
+            border:1px solid rgba(255,255,255,.16);
+            background:rgba(255,255,255,.06);
+            font-size:.8rem;
+        }
+
+        .btn-disabled{opacity:.55;pointer-events:none;}
+
+        /* Resumen */
+        .summary-header{
+            position:relative;
+            border-radius:16px;
+            overflow:hidden;
+            margin-bottom:1rem;
+            background:#050712;
+        }
+        .summary-header img{
+            display:block;
+            width:100%;
+            height:170px;
+            object-fit:cover;
+            transform:scale(1.04);
+        }
+        .summary-overlay{
+            position:absolute;
+            inset:auto 0 0 0;
+            padding:12px 12px 10px;
+            background:linear-gradient(to top,rgba(4,5,12,.96),transparent);
+        }
+
+        .badge-status{
+            display:inline-flex;
+            align-items:center;
+            gap:.45rem;
+            padding:.25rem .7rem;
+            border-radius:999px;
+            background:rgba(0,0,0,.72);
+            border:1px solid rgba(255,255,255,.18);
+            font-size:.75rem;
+        }
+        .badge-status span{
+            width:9px;height:9px;border-radius:999px;
+            background:#22c55e;
+            box-shadow:0 0 0 3px rgba(34,197,94,.35);
+        }
+
+        /* Modal */
+        .modal{
+            position:fixed;
+            inset:0;
+            display:none;
+            align-items:center;
+            justify-content:center;
+            z-index:80;
+        }
+        .modal.show{display:flex;}
+        .modal .backdrop{
+            position:absolute;
+            inset:0;
+            background:rgba(6,8,16,.75);
+            backdrop-filter:blur(4px);
+        }
+        .modal .content{
+            position:relative;
+            z-index:1;
+            width:min(92vw,520px);
+            border-radius:18px;
+            border:1px solid rgba(255,255,255,.16);
+            background:linear-gradient(145deg,rgba(17,19,36,.98),rgba(6,7,18,.99));
+            padding:18px 18px 16px;
+            box-shadow:0 24px 70px rgba(0,0,0,.85);
+        }
+        .chip{
+            display:inline-flex;
+            align-items:center;
+            gap:.35rem;
+            padding:.25rem .7rem;
+            border-radius:999px;
+            border:1px solid rgba(255,255,255,.22);
+            background:rgba(255,255,255,.05);
+            font-size:.8rem;
+            font-weight:700;
+        }
+
+        /* Card preview simple */
+        .card-preview{
+            margin-top:1rem;
+            border-radius:18px;
+            padding:14px 16px;
+            background:radial-gradient(circle at 0% 0%,rgba(123,97,255,.4),rgba(8,9,20,1));
+            border:1px solid rgba(255,255,255,.25);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size:.8rem;
+        }
+        .card-preview-top{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:10px;
+        }
+        .card-chip{
+            width:32px;height:22px;border-radius:8px;
+            background:linear-gradient(135deg,#ffe082,#ffb74d);
+        }
+
+        /* Ripple */
+        .ripple{
+            position:relative;
+            overflow:hidden;
+        }
+        .ripple span{
+            position:absolute;
+            border-radius:50%;
+            transform:scale(0);
+            animation:rippleAnim .6s linear;
+            background:rgba(255,255,255,.35);
+            pointer-events:none;
+        }
+        @keyframes rippleAnim{
+            to{transform:scale(3);opacity:0;}
+        }
+
+        @keyframes fadeUp{
+            from{opacity:0;transform:translateY(8px);}
+            to{opacity:1;transform:translateY(0);}
+        }
+        .fadeUp{animation:fadeUp .45s ease forwards;}
+    </style>
 </head>
+
 <body class="text-white font-sans">
-  <%@ include file="../Includes/nav_base.jspf" %>
+<%@ include file="../Includes/nav_base.jspf" %>
 
-  <main class="max-w-6xl mx-auto px-5 py-6">
-
-    <!-- Breadcrumb + Pasos -->
-    <div class="flex flex-col gap-3 mb-6">
-      <nav class="crumbs text-sm">
-        <a href="<%= request.getContextPath() %>/Vista/PaginaPrincipal.jsp">Inicio</a> /
-        <a href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">Eventos</a> /
-        <span class="opacity-100 font-semibold">Pago</span>
-      </nav>
-      <div class="steps">
-        <div class="step">1) Resumen</div>
-        <div class="step is-active">2) Pago</div>
-        <div class="step">3) Confirmación</div>
-      </div>
-    </div>
+<main class="shell">
+    <!-- TOP: migas + pasos -->
+    <section class="flex flex-col gap-3 mb-6 fadeUp">
+        <nav class="crumbs text-xs sm:text-sm">
+            <a href="<%= request.getContextPath() %>/Vista/PaginaPrincipal.jsp">Inicio</a> /
+            <a href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">Eventos</a> /
+            <span class="opacity-100 font-semibold">Pago</span>
+        </nav>
+        <div class="steps">
+            <div class="step">1) Resumen</div>
+            <div class="step is-active">2) Pago</div>
+            <div class="step">3) Confirmación</div>
+        </div>
+    </section>
 
     <% if (err != null && !err.isEmpty()) { %>
-      <div class="glassx p-4 mb-4" style="border-color:rgba(255,100,120,.35);background:rgba(255,100,120,.08)">
-        <b>Error:</b> <%= err %>
-      </div>
+        <div class="glassx p-4 mb-5" style="border-color:rgba(255,120,130,.55);background:rgba(255,120,130,.08)">
+            <strong>Error:</strong> <%= err %>
+        </div>
     <% } %>
 
-    <div class="grid md:grid-cols-3 gap-6">
-      <!-- IZQ: formulario -->
-      <section class="md:col-span-2 glassx p-6">
-        <h1 class="text-2xl font-extrabold mb-1">Pagar entrada</h1>
-        <p class="muted mb-1">
-          <b><%= ev.getTitle() %></b><br>
-          🎟️ Tipo de ticket: <b><%= ticketTypeName %></b><br>
-          Cantidad: <b><%= qty %></b> · Total: <b><%= COP.format(total) %></b>
-        </p>
-
-        <!-- Método de pago -->
-        <div class="mb-4">
-          <label class="block text-sm text-white/80 mb-1">Método de pago</label>
-          <div class="pm-wrap" id="pmGrid" role="radiogroup" aria-label="Método de pago">
-            <label class="pm active"><input type="radio" name="pm" value="VISA" checked>💳 Visa</label>
-            <label class="pm"><input type="radio" name="pm" value="MASTERCARD">💳 MasterCard</label>
-            <label class="pm"><input type="radio" name="pm" value="PSE">🏦 PSE</label>
-            <label class="pm"><input type="radio" name="pm" value="NEQUI">📱 Nequi</label>
-          </div>
-        </div>
-
-        <form action="<%= request.getContextPath() %>/Control/ct_pago_simulado.jsp" method="post" class="space-y-4" id="payForm" novalidate>
-          <!-- Hidden essentials -->
-          <input type="hidden" name="eventId"      value="<%= eventId %>">
-          <input type="hidden" name="qty"          value="<%= qty %>">
-          <input type="hidden" name="amount"       value="<%= total %>">
-          <input type="hidden" name="ticketTypeId" value="<%= ticketTypeId %>">
-          <input type="hidden" name="paymentMethod" id="paymentMethod" value="VISA">
-          <!-- Página de retorno si hay error -->
-          <input type="hidden" name="back" value="/Vista/PagoSimulado.jsp">
-
-          <div class="field">
-            <label class="block text-sm text-white/80 mb-1">Titular</label>
-            <input required name="holder" autocomplete="cc-name" class="input" placeholder="Nombres y apellidos">
-            <div class="error">Ingresa el nombre del titular.</div>
-          </div>
-
-          <!-- Campos tarjeta -->
-          <div id="cardFields">
-            <div class="grid md:grid-cols-2 gap-4">
-              <div class="field">
-                <label class="block text-sm text-white/80 mb-1">Número de tarjeta</label>
-                <input required id="card" name="card" inputmode="numeric" autocomplete="cc-number"
-                       maxlength="19" placeholder="4111 1111 1111 1111" class="input">
-                <div class="error">Número inválido (Luhn). Si termina en 0000 simulamos error.</div>
-              </div>
-
-              <div class="field">
-                <label class="block text-sm text-white/80 mb-1">CVV</label>
-                <input required id="cvv" name="cvv" inputmode="numeric" autocomplete="cc-csc"
-                       pattern="\\d{3,4}" maxlength="4" placeholder="123" class="input">
-                <div class="error">CVV inválido.</div>
-              </div>
+    <section class="grid md:grid-cols-3 gap-6 fadeUp">
+        <!-- IZQUIERDA: FORMULARIO -->
+        <div class="md:col-span-2 glassx p-6">
+            <div class="flex items-start justify-between gap-3 mb-3">
+                <div>
+                    <div class="small-badge"><span></span> Checkout seguro</div>
+                    <h1 class="text-2xl font-extrabold mt-2 leading-tight">
+                        Pagar entrada
+                    </h1>
+                    <p class="muted text-sm mt-1">
+                        <b><%= ev.getTitle() %></b><br>
+                        🎟️ <b><%= ticketTypeName %></b> · x<%= qty %> · Total: <b><%= COP.format(total) %></b>
+                    </p>
+                </div>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-4">
-              <div class="field">
-                <label class="block text-sm text-white/80 mb-1">Vencimiento (MM/AA)</label>
-                <input id="exp" name="exp" type="text" inputmode="numeric" autocomplete="cc-exp"
-                       maxlength="5" pattern="(?:0[1-9]|1[0-2])\\/\\d{2}" title="Formato MM/AA (ej: 08/28)"
-                       placeholder="MM/AA" required class="input" />
-                <div class="error">Fecha inválida (MM/AA).</div>
-              </div>
-
-              <div>
-                <label class="block text-sm text-white/80 mb-1">Documento (opcional)</label>
-                <input name="doc" inputmode="numeric" placeholder="CC / NIT" class="input">
-              </div>
+            <!-- Método de pago -->
+            <div class="mt-3 mb-5">
+                <label class="block text-sm text-white/80 mb-2">Método de pago</label>
+                <div class="pm-wrap" id="pmGrid" role="radiogroup" aria-label="Método de pago">
+                    <label class="pm active">
+                        <span class="pm-icon">💳</span>
+                        Visa
+                        <input type="radio" name="pm" value="VISA" checked>
+                    </label>
+                    <label class="pm">
+                        <span class="pm-icon">💳</span>
+                        MasterCard
+                        <input type="radio" name="pm" value="MASTERCARD">
+                    </label>
+                    <label class="pm">
+                        <span class="pm-icon">🏦</span>
+                        PSE
+                        <input type="radio" name="pm" value="PSE">
+                    </label>
+                    <label class="pm">
+                        <span class="pm-icon">📱</span>
+                        Nequi
+                        <input type="radio" name="pm" value="NEQUI">
+                    </label>
+                </div>
+                <p class="text-xs text-white/60 mt-2">
+                    Puedes cambiar el método antes de confirmar. Para PSE y Nequi te mostraremos una guía rápida.
+                </p>
             </div>
-          </div>
 
-          <label class="inline-flex items-center gap-2 text-sm">
-            <input id="chkTerms" type="checkbox" class="accent-current">
-            Acepto los <a href="#" class="underline">Términos</a> y la <a href="#" class="underline">Política de datos</a>.
-          </label>
+            <form action="<%= request.getContextPath() %>/Control/ct_pago_simulado.jsp"
+                  method="post" class="space-y-4" id="payForm" novalidate>
 
-          <button id="btnPay" class="w-full btn-primary ripple opacity-50 pointer-events-none" type="submit">
-            Pagar <%= COP.format(total) %>
-          </button>
-        </form>
+                <!-- Hidden essentials -->
+                <input type="hidden" name="eventId"      value="<%= eventId %>">
+                <input type="hidden" name="qty"          value="<%= qty %>">
+                <input type="hidden" name="amount"       value="<%= total %>">
+                <input type="hidden" name="ticketTypeId" value="<%= ticketTypeId %>">
+                <input type="hidden" name="paymentMethod" id="paymentMethod" value="VISA">
+                <input type="hidden" name="back" value="/Vista/PagoSimulado.jsp">
 
-        <div class="divider"></div>
+                <!-- Titular -->
+                <div class="field">
+                    <input required name="holder" autocomplete="cc-name"
+                           class="input" placeholder="Nombre del titular">
+                    <span class="field-label">Titular de la tarjeta / cuenta</span>
+                    <div class="error">Ingresa el nombre del titular.</div>
+                </div>
 
-        <div class="grid md:grid-cols-3 gap-3">
-          <div class="glassx p-3 text-center">🔒 Conexión segura TLS 1.2</div>
-          <div class="glassx p-3 text-center">🧾 Recibo y factura por correo</div>
-          <div class="glassx p-3 text-center">🛟 Soporte en vivo</div>
+                <!-- Campos tarjeta -->
+                <div id="cardFields">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="field">
+                            <input required id="card" name="card" inputmode="numeric" autocomplete="cc-number"
+                                   maxlength="19" placeholder="Número de tarjeta" class="input">
+                            <span class="field-label">Número de tarjeta</span>
+                            <div class="error">Número inválido (Luhn). Si termina en 0000 simulamos un pago rechazado.</div>
+                        </div>
+
+                        <div class="field">
+                            <input required id="cvv" name="cvv" inputmode="numeric" autocomplete="cc-csc"
+                                   pattern="\\d{3,4}" maxlength="4" placeholder="CVV" class="input">
+                            <span class="field-label">CVV</span>
+                            <div class="error">CVV inválido (3 o 4 dígitos).</div>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="field">
+                            <input id="exp" name="exp" type="text" inputmode="numeric" autocomplete="cc-exp"
+                                   maxlength="5" pattern="(?:0[1-9]|1[0-2])\\/\\d{2}"
+                                   title="Formato MM/AA (ej: 08/28)"
+                                   placeholder="MM/AA" required class="input" />
+                            <span class="field-label">Vencimiento (MM/AA)</span>
+                            <div class="error">Fecha inválida o vencida.</div>
+                        </div>
+
+                        <div class="field">
+                            <input name="doc" inputmode="numeric" placeholder="Documento" class="input">
+                            <span class="field-label">Documento (opcional)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card preview -->
+                <div class="card-preview" id="cardPreview">
+                    <div class="card-preview-top">
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-white/70">LivePass Buga</div>
+                            <div class="text-[0.7rem] text-white/50 mt-0.5">Pago de entradas en línea</div>
+                        </div>
+                        <div class="card-chip"></div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="text-sm mb-1" id="previewNumber">•••• •••• •••• ••••</div>
+                        <div class="flex justify-between text-[0.72rem] text-white/80">
+                            <span id="previewName">NOMBRE DEL TITULAR</span>
+                            <span id="previewExp">MM/AA</span>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="inline-flex items-center gap-2 text-xs sm:text-sm mt-3">
+                    <input id="chkTerms" type="checkbox" class="accent-current">
+                    <span>Acepto los <a href="#" class="underline">Términos y condiciones</a> y la
+                        <a href="#" class="underline">Política de tratamiento de datos</a>.</span>
+                </label>
+
+                <button id="btnPay" class="w-full btn-primary ripple btn-disabled mt-1" type="submit">
+                    Pagar <%= COP.format(total) %>
+                </button>
+            </form>
+
+            <div class="divider"></div>
+
+            <div class="grid md:grid-cols-3 gap-3 text-xs text-white/80">
+                <div class="glassx p-3 text-center bg-opacity-60">🔒 Conexión segura TLS 1.2</div>
+                <div class="glassx p-3 text-center bg-opacity-60">🧾 Recibo y factura por correo</div>
+                <div class="glassx p-3 text-center bg-opacity-60">🛟 Soporte en caso de inconvenientes</div>
+            </div>
+
+            <p class="mt-4 text-xs sm:text-sm">
+                ¿Problemas con el pago?
+                <a class="underline"
+                   href="<%= request.getContextPath() %>/Vista/Checkout.jsp?eventId=<%= eventId %>&qty=<%= qty %>&ticketTypeId=<%= ticketTypeId %>">
+                    Volver al resumen
+                </a>.
+            </p>
         </div>
 
-        <div class="mt-4 text-sm">
-          ¿Problemas con el pago?
-          <a class="underline"
-             href="<%= request.getContextPath() %>/Vista/Checkout.jsp?eventId=<%= eventId %>&qty=<%= qty %>&ticketTypeId=<%= ticketTypeId %>">
-            volver a resumen
-          </a>.
-        </div>
-      </section>
+        <!-- DERECHA: RESUMEN -->
+        <aside class="glassx p-6 h-fit sticky">
+            <div class="summary-header">
+                <img src="<%= imgSrc %>" alt="<%= imgAlt %>">
+                <div class="summary-overlay">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <div class="badge-status">
+                            <span></span> Resumen de tu compra
+                        </div>
+                        <span class="text-[0.7rem] text-white/70">
+                            Evento #<%= ev.getId() %>
+                        </span>
+                    </div>
+                    <div class="text-sm font-extrabold line-clamp-2"><%= ev.getTitle() %></div>
+                    <div class="mt-1 text-xs text-white/70">
+                        <span class="ticket-chip">🎟 <%= ticketTypeName %> · x<%= qty %></span>
+                    </div>
+                </div>
+            </div>
 
-      <!-- DER: resumen -->
-      <aside class="glassx p-6 h-fit sticky">
-        <h3 class="font-bold text-lg mb-3">Resumen</h3>
-        <ul class="text-white/80 space-y-1">
-          <li class="flex justify-between"><span>Evento</span><span class="text-right"><%= ev.getTitle() %></span></li>
-          <li class="flex justify-between"><span>Tipo de ticket</span><span><%= ticketTypeName %></span></li>
-          <li class="flex justify-between"><span>Precio unitario</span><span><%= COP.format(unit) %></span></li>
-          <li class="flex justify-between"><span>Cantidad</span><span><%= qty %></span></li>
-          <li class="flex justify-between"><span>Total</span><span class="font-extrabold"><%= COP.format(total) %></span></li>
-        </ul>
-        <div class="divider"></div>
-        <a class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30 block text-center mb-2"
-           href="<%= request.getContextPath() %>/Vista/EventoDetalle.jsp?id=<%= eventId %>">Ver detalles</a>
-        <a class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30 block text-center"
-           href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">Seguir explorando</a>
-      </aside>
-    </div>
+            <ul class="text-white/80 text-sm space-y-1">
+                <li class="flex justify-between gap-2">
+                    <span>Evento</span>
+                    <span class="text-right font-semibold"><%= ev.getTitle() %></span>
+                </li>
+                <li class="flex justify-between gap-2">
+                    <span>Tipo de ticket</span>
+                    <span><%= ticketTypeName %></span>
+                </li>
+                <li class="flex justify-between gap-2">
+                    <span>Precio unitario</span>
+                    <span><%= COP.format(unit) %></span>
+                </li>
+                <li class="flex justify-between gap-2">
+                    <span>Cantidad</span>
+                    <span><%= qty %></span>
+                </li>
+                <li class="flex justify-between gap-2 pt-1 border-t border-white/10 mt-1">
+                    <span>Total a pagar</span>
+                    <span class="font-extrabold text-aqua"><%= COP.format(total) %></span>
+                </li>
+            </ul>
 
-    <div class="grid sm:grid-cols-3 gap-4 mt-8">
-      <div class="glassx p-4 text-center">🔐 Pagos cifrados</div>
-      <div class="glassx p-4 text-center">🧩 Prevención de fraude activa</div>
-      <div class="glassx p-4 text-center">💬 Respuesta promedio &lt; 2h</div>
-    </div>
-  </main>
+            <div class="divider"></div>
 
-  <!-- MODAL PSE/NEQUI -->
-  <div id="pmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pmTitle" aria-describedby="pmDesc">
+            <a class="px-4 py-2 rounded-xl border border-white/18 hover:border-white/35 block text-center text-sm mb-2"
+               href="<%= request.getContextPath() %>/Vista/EventoDetalle.jsp?id=<%= eventId %>">
+                Ver detalles del evento
+            </a>
+            <a class="px-4 py-2 rounded-xl border border-white/18 hover:border-white/35 block text-center text-sm"
+               href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">
+                Seguir explorando eventos
+            </a>
+        </aside>
+    </section>
+
+    <section class="grid sm:grid-cols-3 gap-4 mt-8 text-xs sm:text-sm">
+        <div class="glassx p-4 text-center bg-opacity-60">🔐 Pagos cifrados y monitorizados.</div>
+        <div class="glassx p-4 text-center bg-opacity-60">🧩 Validaciones antifraude simuladas.</div>
+        <div class="glassx p-4 text-center bg-opacity-60">💬 Tiempo de respuesta promedio &lt; 2h.</div>
+    </section>
+</main>
+
+<!-- MODAL PSE / NEQUI -->
+<div id="pmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pmTitle" aria-describedby="pmDesc">
     <div class="backdrop"></div>
     <div class="content">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <div class="chip" id="pmChip">Método</div>
-          <h3 id="pmTitle" class="text-xl font-extrabold mt-2">Pago alterno</h3>
-          <p id="pmDesc" class="text-white/70 mt-1">Sigue los pasos para completar tu pago.</p>
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <div class="chip" id="pmChip">Método</div>
+                <h3 id="pmTitle" class="text-xl font-extrabold mt-2">Pago alterno</h3>
+                <p id="pmDesc" class="text-white/70 mt-1">Sigue los pasos para completar tu pago.</p>
+            </div>
+            <button id="pmClose"
+                    class="px-3 py-1 rounded-lg border border-white/20 hover:border-white/35 text-sm">✕</button>
         </div>
-        <button id="pmClose" class="px-3 py-1 rounded-lg border border-white/20 hover:border-white/35">✕</button>
-      </div>
 
-      <div class="divider"></div>
+        <div class="divider"></div>
 
-      <ol id="pmSteps" class="list-decimal pl-5 space-y-2 text-white/80"></ol>
+        <ol id="pmSteps" class="list-decimal pl-5 space-y-2 text-white/82 text-sm"></ol>
 
-      <div class="mt-4 flex items-center justify-end gap-2">
-        <button id="pmCancel" class="px-4 py-2 rounded-xl border border-white/15 hover:border-white/30">Cancelar</button>
-        <a id="pmContinue" class="btn-primary px-5 py-2 rounded-xl" href="#">Continuar</a>
-      </div>
+        <div class="mt-4 flex items-center justify-end gap-2">
+            <button id="pmCancel"
+                    class="px-4 py-2 rounded-xl border border-white/18 hover:border-white/35 text-sm">
+                Cancelar
+            </button>
+            <a id="pmContinue" class="btn-primary px-5 py-2 rounded-xl text-sm" href="#">Continuar</a>
+        </div>
     </div>
-  </div>
+</div>
 
-  <footer class="border-t border-white/10">
-    <div class="max-w-6xl mx-auto px-5 py-6 flex flex-col sm:flex-row items-center justify-between text-white/70">
-      <div class="font-extrabold flex items-center gap-2">Livepass <span class="text-aqua">Buga</span></div>
-      <div>© <%= java.time.Year.now() %> Livepass Buga</div>
+<footer class="border-t border-white/10 mt-6">
+    <div class="max-w-6xl mx-auto px-5 py-6 flex flex-col sm:flex-row items-center justify-between text-white/70 text-xs sm:text-sm">
+        <div class="font-extrabold flex items-center gap-1">
+            LivePass <span class="text-aqua">Buga</span>
+        </div>
+        <div>© <%= java.time.Year.now() %> LivePass Buga</div>
     </div>
-  </footer>
+</footer>
 
-  <script>
-    // UI método de pago + modal PSE/Nequi
+<script>
+    // ========= MÉTODO DE PAGO + MODAL =========
     (function(){
-      const grid = document.getElementById('pmGrid');
-      const out  = document.getElementById('paymentMethod');
-      const cardFields = document.getElementById('cardFields');
+        const grid = document.getElementById('pmGrid');
+        const out  = document.getElementById('paymentMethod');
+        const cardFields = document.getElementById('cardFields');
 
-      const modal = document.getElementById('pmModal');
-      const pmChip = document.getElementById('pmChip');
-      const pmTitle = document.getElementById('pmTitle');
-      const pmDesc  = document.getElementById('pmDesc');
-      const pmSteps = document.getElementById('pmSteps');
-      const pmContinue = document.getElementById('pmContinue');
-      const closeBtns = [document.getElementById('pmClose'), document.getElementById('pmCancel'), modal.querySelector('.backdrop')];
+        const modal = document.getElementById('pmModal');
+        const pmChip = document.getElementById('pmChip');
+        const pmTitle = document.getElementById('pmTitle');
+        const pmDesc  = document.getElementById('pmDesc');
+        const pmSteps = document.getElementById('pmSteps');
+        const pmContinue = document.getElementById('pmContinue');
+        const closeBtns = [
+            document.getElementById('pmClose'),
+            document.getElementById('pmCancel'),
+            modal.querySelector('.backdrop')
+        ];
 
-      const card = document.getElementById('card');
-      const cvv  = document.getElementById('cvv');
-      const exp  = document.getElementById('exp');
+        const card = document.getElementById('card');
+        const cvv  = document.getElementById('cvv');
+        const exp  = document.getElementById('exp');
 
-      const alreadyShown = {};
+        const alreadyShown = {};
 
-      function simulatorURL(method){
-        const base = '<%= request.getContextPath() %>/Vista/' + (method==='PSE' ? 'PSE_Simulado.jsp' : 'Nequi_Simulado.jsp');
-        const qs = `?eventId=<%= eventId %>&qty=<%= qty %>&amount=<%= total %>&ticketTypeId=<%= ticketTypeId %>`;
-        return base + qs;
-      }
-
-      function setModalFor(method){
-        pmChip.textContent  = method==='PSE' ? '🏦 PSE' : '📱 Nequi';
-        pmTitle.textContent = method==='PSE' ? 'Pago con PSE' : 'Pago con Nequi';
-        pmDesc.textContent  = method==='PSE'
-          ? 'Serás redirigido al banco para autorizar el débito desde tu cuenta.'
-          : 'Abriremos Nequi para que apruebes el pago desde tu celular.';
-        pmSteps.innerHTML = '';
-        (method==='PSE'
-          ? ['Selecciona tu banco y autentícate.','Autoriza el pago por el total indicado.','Volverás automáticamente con la confirmación.']
-          : ['Confirma el número de tu cuenta.','Aprueba el cobro en la app Nequi.','Regresa para ver la confirmación.']
-        ).forEach(t=>{ const li=document.createElement('li'); li.textContent=t; pmSteps.appendChild(li); });
-
-        pmContinue.href = simulatorURL(method);
-      }
-
-      function showModal(method){
-        setModalFor(method);
-        modal.classList.add('show');
-        document.body.style.overflow='hidden';
-      }
-      function hideModal(){
-        modal.classList.remove('show');
-        document.body.style.overflow='';
-      }
-      closeBtns.forEach(b=> b && b.addEventListener('click', hideModal));
-      document.addEventListener('keydown', e=>{ if(e.key==='Escape' && modal.classList.contains('show')) hideModal(); });
-
-      function toggleCardFields(isCard){
-        cardFields.style.display = isCard ? '' : 'none';
-        [card, cvv, exp].forEach(el=>{
-          if (!el) return;
-          if (isCard) el.setAttribute('required','required');
-          else        el.removeAttribute('required');
-        });
-      }
-
-      function sync(){
-        const m = out.value;
-        const isCard = (m==='VISA' || m==='MASTERCARD');
-        toggleCardFields(isCard);
-        if (!isCard && !alreadyShown[m]) { alreadyShown[m]=true; showModal(m); }
-      }
-
-      grid.querySelectorAll('.pm').forEach(el=>{
-        el.addEventListener('click', ()=>{
-          grid.querySelectorAll('.pm').forEach(i=>i.classList.remove('active'));
-          el.classList.add('active');
-          const r = el.querySelector('input[type=radio]');
-          if (r) { r.checked = true; out.value = r.value; sync(); }
-        });
-      });
-
-      document.getElementById('btnPay').addEventListener('click', function(e){
-        const m = out.value;
-        if (m==='PSE' || m==='NEQUI') {
-          if (alreadyShown[m]) window.location.href = simulatorURL(m);
-          else { alreadyShown[m]=true; showModal(m); }
-          e.preventDefault();
-        }
-      });
-
-      sync();
-    })();
-
-    // Formateo tarjeta
-    (function(){
-      const input = document.getElementById('card');
-      if (!input) return;
-      function formatAndKeepCaret(){
-        const old = input.value;
-        const oldPos = input.selectionStart || 0;
-        const digitsLeft = (old.slice(0, oldPos).match(/\d/g)||[]).length;
-        const raw = old.replace(/\D/g,'').slice(0,16);
-        const groups = raw.match(/.{1,4}/g) || [];
-        const formatted = groups.join(' ');
-        input.value = formatted;
-        let pos=0, seen=0;
-        while (pos<formatted.length && seen<digitsLeft){ if (/\d/.test(formatted[pos])) seen++; pos++; }
-        input.setSelectionRange(pos,pos);
-      }
-      input.addEventListener('input', formatAndKeepCaret);
-    })();
-
-    // Exp (MM/AA)
-    (function(){
-      const exp = document.getElementById('exp');
-      if (!exp) return;
-      function formatExp(){
-        const old = exp.value;
-        const oldPos = exp.selectionStart || 0;
-        const digitsLeft = (old.slice(0, oldPos).replace(/\D/g,'').length);
-        let raw = old.replace(/\D/g,'').slice(0,4);
-        if (raw.length>=1){
-          let mm = parseInt(raw.slice(0,2)||'0',10);
-          if (!isNaN(mm)){ if(mm<=0) mm=1; if(mm>12) mm=12; raw = String(mm).padStart(2,'0') + raw.slice(2); }
-        }
-        let formatted = raw.length>2 ? raw.slice(0,2)+'/'+raw.slice(2) : raw;
-        exp.value = formatted;
-        let pos=0, seen=0;
-        while (pos<formatted.length && seen<digitsLeft){ if (/\d/.test(formatted[pos])) seen++; pos++; }
-        if (pos===2 && formatted[pos]==='/') pos++;
-        exp.setSelectionRange(pos,pos);
-      }
-      exp.addEventListener('input', formatExp);
-      exp.addEventListener('blur', ()=>{ const r = exp.value.replace(/\D/g,''); if (r.length===1) exp.value = '0'+r+'/'; });
-    })();
-
-    // Validaciones + habilitar botón
-    (function(){
-      const form = document.getElementById('payForm');
-      const btn  = document.getElementById('btnPay');
-      const chk  = document.getElementById('chkTerms');
-      const pm   = document.getElementById('paymentMethod');
-      const card = document.getElementById('card');
-      const cvv  = document.getElementById('cvv');
-      const exp  = document.getElementById('exp');
-
-      function luhn(num){ let s=0,alt=false; for(let i=num.length-1;i>=0;i--){let n=parseInt(num.charAt(i),10); if(alt){n*=2;if(n>9)n-=9} s+=n; alt=!alt;} return s%10===0; }
-
-      function validate(){
-        let ok = true;
-        const holderField = form.querySelector('[name="holder"]').closest('.field');
-        if (!form.holder.value.trim()){ holderField.classList.add('invalid'); ok=false; } else holderField.classList.remove('invalid');
-
-        const usingCard = (pm.value==='VISA' || pm.value==='MASTERCARD');
-        if (usingCard){
-          const raw = card.value.replace(/\D/g,'');
-          const cardField = card.closest('.field');
-          if (raw.length<13 || !luhn(raw)){ cardField.classList.add('invalid'); ok=false; } else cardField.classList.remove('invalid');
-
-          const cvvField = cvv.closest('.field');
-          if (!/^\d{3,4}$/.test(cvv.value)){ cvvField.classList.add('invalid'); ok=false; } else cvvField.classList.remove('invalid');
-
-          const expField = exp.closest('.field');
-          const m = exp.value.match(/^(\d{2})\/(\d{2})$/);
-          if (!m){ expField.classList.add('invalid'); ok=false; }
-          else {
-            const mm=parseInt(m[1],10), yy=parseInt('20'+m[2],10);
-            const now=new Date(), endMonth=new Date(yy, mm);
-            if (endMonth<=now){ expField.classList.add('invalid'); ok=false; } else expField.classList.remove('invalid');
-          }
+        function simulatorURL(method){
+            const base = '<%= request.getContextPath() %>/Vista/' +
+                (method === 'PSE' ? 'PSE_Simulado.jsp' : 'Nequi_Simulado.jsp');
+            const qs =
+                '?eventId=<%= eventId %>&qty=<%= qty %>&amount=<%= total %>&ticketTypeId=<%= ticketTypeId %>';
+            return base + qs;
         }
 
-        if (!chk.checked) ok=false;
+        function setModalFor(method){
+            if (method === 'PSE') {
+                pmChip.textContent  = '🏦 PSE';
+                pmTitle.textContent = 'Pago con PSE';
+                pmDesc.textContent  = 'Te redirigiremos a la pasarela de tu banco para autorizar el débito.';
+                pmSteps.innerHTML   = '';
+                ['Selecciona tu banco y autentícate.',
+                 'Confirma el monto y autoriza el débito.',
+                 'Volverás automáticamente a LivePass con el resultado.']
+                    .forEach(t => { const li=document.createElement('li'); li.textContent=t; pmSteps.appendChild(li); });
+            } else {
+                pmChip.textContent  = '📱 Nequi';
+                pmTitle.textContent = 'Pago con Nequi';
+                pmDesc.textContent  = 'Abriremos un flujo simulado de Nequi para aprobar el pago.';
+                pmSteps.innerHTML   = '';
+                ['Verifica tu número registrado.',
+                 'Aprueba el cobro desde tu celular.',
+                 'Regresa aquí para ver la confirmación.']
+                    .forEach(t => { const li=document.createElement('li'); li.textContent=t; pmSteps.appendChild(li); });
+            }
+            pmContinue.href = simulatorURL(method);
+        }
 
-        if (ok){ btn.classList.remove('opacity-50','pointer-events-none'); }
-        else    { btn.classList.add   ('opacity-50','pointer-events-none'); }
-
-        return ok;
-      }
-
-      form.addEventListener('input', validate);
-      chk.addEventListener('change', validate);
-      document.getElementById('pmGrid').addEventListener('click', validate);
-      form.addEventListener('submit', function(e){ if(!validate()) e.preventDefault(); });
-      validate();
-    })();
-
-    // Ripple
-    (function(){
-      document.querySelectorAll('.ripple').forEach(btn=>{
-        btn.addEventListener('click', function(e){
-          const r=this.getBoundingClientRect(), s=document.createElement('span'), z=Math.max(r.width,r.height);
-          s.style.width=s.style.height=z+'px'; s.style.left=(e.clientX-r.left-z/2)+'px'; s.style.top=(e.clientY-r.top-z/2)+'px';
-          this.appendChild(s); setTimeout(()=>s.remove(),600);
+        function showModal(method){
+            setModalFor(method);
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        function hideModal(){
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        closeBtns.forEach(b => b && b.addEventListener('click', hideModal));
+        document.addEventListener('keydown', e=>{
+            if (e.key === 'Escape' && modal.classList.contains('show')) hideModal();
         });
-      });
+
+        function toggleCardFields(isCard){
+            cardFields.style.display = isCard ? '' : 'none';
+            [card, cvv, exp].forEach(el=>{
+                if (!el) return;
+                if (isCard) el.setAttribute('required','required');
+                else        el.removeAttribute('required');
+            });
+        }
+
+        function sync(){
+            const m = out.value;
+            const isCard = (m === 'VISA' || m === 'MASTERCARD');
+            toggleCardFields(isCard);
+        }
+
+        grid.querySelectorAll('.pm').forEach(el=>{
+            el.addEventListener('click', ()=>{
+                grid.querySelectorAll('.pm').forEach(i=>i.classList.remove('active'));
+                el.classList.add('active');
+                const r = el.querySelector('input[type=radio]');
+                if (r) { r.checked = true; out.value = r.value; }
+
+                const method = out.value;
+                if (method === 'PSE' || method === 'NEQUI') {
+                    // mostrar modal sólo una vez
+                    if (!alreadyShown[method]) {
+                        alreadyShown[method] = true;
+                        showModal(method);
+                    }
+                }
+                sync();
+            });
+        });
+
+        // botón pagar con PSE/Nequi → ir directo al simulador si ya se mostró el modal
+        document.getElementById('btnPay').addEventListener('click', function(e){
+            const m = out.value;
+            if (m === 'PSE' || m === 'NEQUI') {
+                if (alreadyShown[m]) {
+                    window.location.href = simulatorURL(m);
+                } else {
+                    alreadyShown[m] = true;
+                    showModal(m);
+                }
+                e.preventDefault();
+            }
+        });
+
+        sync();
     })();
-  </script>
+
+    // ========= FLOATING LABEL (filled) =========
+    (function(){
+        document.querySelectorAll('.field .input').forEach(input=>{
+            const update = ()=>{
+                const f = input.closest('.field');
+                if (!f) return;
+                if (input.value.trim() !== '') f.classList.add('filled');
+                else f.classList.remove('filled');
+            };
+            input.addEventListener('input', update);
+            input.addEventListener('blur', update);
+            update();
+        });
+    })();
+
+    // ========= PREVIEW TARJETA =========
+    (function(){
+        const card = document.getElementById('card');
+        const holder = document.querySelector('input[name="holder"]');
+        const exp = document.getElementById('exp');
+        const pNum = document.getElementById('previewNumber');
+        const pName = document.getElementById('previewName');
+        const pExp = document.getElementById('previewExp');
+
+        if (!card || !holder || !exp) return;
+
+        card.addEventListener('input', ()=>{
+            const raw = card.value.replace(/\D/g,'').slice(0,16);
+            const groups = raw.match(/.{1,4}/g) || [];
+            const formatted = groups.join(' ');
+            pNum.textContent = formatted || '•••• •••• •••• ••••';
+        });
+
+        holder.addEventListener('input', ()=>{
+            const v = holder.value.trim().toUpperCase();
+            pName.textContent = v || 'NOMBRE DEL TITULAR';
+        });
+
+        exp.addEventListener('input', ()=>{
+            pExp.textContent = exp.value || 'MM/AA';
+        });
+    })();
+
+    // ========= FORMATEO TARJETA =========
+    (function(){
+        const input = document.getElementById('card');
+        if (!input) return;
+
+        function formatAndKeepCaret(){
+            const old = input.value;
+            const oldPos = input.selectionStart || 0;
+            const digitsLeft = (old.slice(0, oldPos).match(/\d/g) || []).length;
+            const raw = old.replace(/\D/g,'').slice(0,16);
+            const groups = raw.match(/.{1,4}/g) || [];
+            const formatted = groups.join(' ');
+            input.value = formatted;
+            let pos=0, seen=0;
+            while (pos<formatted.length && seen<digitsLeft){
+                if (/\d/.test(formatted[pos])) seen++;
+                pos++;
+            }
+            input.setSelectionRange(pos,pos);
+        }
+        input.addEventListener('input', formatAndKeepCaret);
+    })();
+
+    // ========= FORMATEO EXP (MM/AA) =========
+    (function(){
+        const exp = document.getElementById('exp');
+        if (!exp) return;
+
+        function formatExp(){
+            const old = exp.value;
+            const oldPos = exp.selectionStart || 0;
+            const digitsLeft = (old.slice(0, oldPos).replace(/\D/g,'').length);
+            let raw = old.replace(/\D/g,'').slice(0,4);
+
+            if (raw.length >= 1){
+                let mm = parseInt(raw.slice(0,2) || '0', 10);
+                if (!isNaN(mm)){
+                    if (mm <= 0) mm = 1;
+                    if (mm > 12) mm = 12;
+                    raw = String(mm).padStart(2,'0') + raw.slice(2);
+                }
+            }
+            let formatted = raw.length > 2 ? raw.slice(0,2)+'/'+raw.slice(2) : raw;
+            exp.value = formatted;
+
+            let pos=0, seen=0;
+            while (pos<formatted.length && seen<digitsLeft){
+                if (/\d/.test(formatted[pos])) seen++;
+                pos++;
+            }
+            if (pos === 2 && formatted[pos] === '/') pos++;
+            exp.setSelectionRange(pos,pos);
+        }
+
+        exp.addEventListener('input', formatExp);
+        exp.addEventListener('blur', ()=>{
+            const r = exp.value.replace(/\D/g,'');
+            if (r.length === 1) exp.value = '0'+r+'/';
+        });
+    })();
+
+    // ========= VALIDACIONES + BOTÓN =========
+    (function(){
+        const form = document.getElementById('payForm');
+        const btn  = document.getElementById('btnPay');
+        const chk  = document.getElementById('chkTerms');
+        const pm   = document.getElementById('paymentMethod');
+        const card = document.getElementById('card');
+        const cvv  = document.getElementById('cvv');
+        const exp  = document.getElementById('exp');
+
+        function luhn(num){
+            let s=0, alt=false;
+            for(let i=num.length-1;i>=0;i--){
+                let n=parseInt(num.charAt(i),10);
+                if (alt){ n*=2; if (n>9)n-=9; }
+                s+=n; alt=!alt;
+            }
+            return s%10===0;
+        }
+
+        // marcar touched al salir
+        form.querySelectorAll('.field .input').forEach(el=>{
+            el.addEventListener('blur', ()=>{
+                const f = el.closest('.field');
+                if (f) f.classList.add('touched');
+                validate();
+            });
+        });
+
+        function validate(){
+            let ok = true;
+
+            const holderField = form.querySelector('[name="holder"]').closest('.field');
+            if (!form.holder.value.trim()){
+                holderField.classList.add('invalid');
+                ok = false;
+            } else holderField.classList.remove('invalid');
+
+            const usingCard = (pm.value === 'VISA' || pm.value === 'MASTERCARD');
+            if (usingCard){
+                const raw = card.value.replace(/\D/g,'');
+                const cardField = card.closest('.field');
+                if (raw.length < 13 || !luhn(raw)){
+                    cardField.classList.add('invalid'); ok=false;
+                } else cardField.classList.remove('invalid');
+
+                const cvvField = cvv.closest('.field');
+                if (!/^\d{3,4}$/.test(cvv.value)){
+                    cvvField.classList.add('invalid'); ok=false;
+                } else cvvField.classList.remove('invalid');
+
+                const expField = exp.closest('.field');
+                const m = exp.value.match(/^(\d{2})\/(\d{2})$/);
+                if (!m){
+                    expField.classList.add('invalid'); ok=false;
+                } else {
+                    const mm = parseInt(m[1],10);
+                    const yy = parseInt('20'+m[2],10);
+                    const now = new Date();
+                    const endMonth = new Date(yy, mm);
+                    if (endMonth <= now){
+                        expField.classList.add('invalid'); ok=false;
+                    } else expField.classList.remove('invalid');
+                }
+            }
+
+            if (!chk.checked) ok = false;
+
+            if (ok) btn.classList.remove('btn-disabled');
+            else   btn.classList.add   ('btn-disabled');
+
+            return ok;
+        }
+
+        form.addEventListener('input', validate);
+        chk.addEventListener('change', validate);
+        document.getElementById('pmGrid').addEventListener('click', validate);
+
+        form.addEventListener('submit', function(e){
+            form.querySelectorAll('.field').forEach(f=>f.classList.add('touched'));
+            if (!validate()) e.preventDefault();
+        });
+
+        validate();
+    })();
+
+    // ========= RIPPLE =========
+    (function(){
+        document.querySelectorAll('.ripple').forEach(btn=>{
+            btn.addEventListener('click', function(e){
+                const r=this.getBoundingClientRect(),
+                      s=document.createElement('span'),
+                      z=Math.max(r.width,r.height);
+                s.style.width=s.style.height=z+'px';
+                s.style.left=(e.clientX-r.left-z/2)+'px';
+                s.style.top =(e.clientY-r.top -z/2)+'px';
+                this.appendChild(s);
+                setTimeout(()=>s.remove(),600);
+            });
+        });
+    })();
+</script>
 </body>
 </html>
+

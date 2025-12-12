@@ -230,7 +230,9 @@
                 <a href="<%=__ctx%>/Vista/EventosOrganizador.jsp" class="block px-4 py-2 hover:bg-white/10 text-sm" role="menuitem">
                   Mis eventos
                 </a>
-              <% } %>
+            <% } %>   <!-- ESTE CIERRE FALTABA -->
+
+
               <div class="h-px bg-white/10 my-1"></div>
               <a href="<%=__ctx%>/Control/ct_logout.jsp"
                  class="block px-4 py-2 text-pink-200 hover:bg-white/10 text-sm"

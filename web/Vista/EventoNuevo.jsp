@@ -1013,9 +1013,9 @@
                 <label class="field-label">Estado inicial</label>
                 <select name="status" class="ui-select">
                   <option value="BORRADOR">Borrador (no visible)</option>
-                  <option value="PENDIENTE">Enviar a revisión</option>
+                  <option value="PUBLICADO">Publicar</option>
                 </select>
-              </div>
+              </div><
             </div>
           </div>
 

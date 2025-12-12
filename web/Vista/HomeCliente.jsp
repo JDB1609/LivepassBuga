@@ -7,10 +7,13 @@
   Integer uid  = (Integer) session.getAttribute("userId");
   String  name = (String)  session.getAttribute("name");
   String  role = (String)  session.getAttribute("role");
-  if (uid == null) { response.sendRedirect(request.getContextPath()+"/Vista/Login.jsp"); return; }
+  if (uid == null) {
+      response.sendRedirect(request.getContextPath()+"/Vista/Login.jsp");
+      return;
+  }
 %>
 
-<%-- KPIs y actividad reciente --%>
+<%-- KPIs y actividad reciente (controlador CT) --%>
 <jsp:include page="../Control/ct_home_cliente.jsp" />
 
 <%
@@ -21,281 +24,1058 @@
   Object _kTot = request.getAttribute("kpi_total");
   Object _kUp  = request.getAttribute("kpi_upcoming");
   Object _kRef = request.getAttribute("kpi_refunded");
-  String kTot = (_kTot!=null? String.valueOf(_kTot) : "–");
-  String kUp  = (_kUp !=null? String.valueOf(_kUp)  : "–");
-  String kRef = (_kRef!=null? String.valueOf(_kRef) : "–");
+  String kTot = (_kTot!=null? String.valueOf(_kTot) : "0");
+  String kUp  = (_kUp !=null? String.valueOf(_kUp)  : "0");
+  String kRef = (_kRef!=null? String.valueOf(_kRef) : "0");
 
   @SuppressWarnings("unchecked")
   List<String> recent = (List<String>) request.getAttribute("recent_activity");
+
+  // Flags simples para mensajes de UX
+  boolean hasTickets = !"0".equals(kTot);
+  boolean hasUpcoming = !"0".equals(kUp);
 %>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <%@ include file="../Includes/head_base.jspf" %>
-  <title>Mi panel</title>
+  <title>Mi panel | LivePass Buga</title>
+
   <style>
-    /* ===== Tarjetas generales / botones ===== */
-    .cta{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.04));border-radius:18px;padding:18px;border:1px solid rgba(255,255,255,.10);box-shadow:0 10px 40px rgba(0,0,0,.45);transition:transform .15s, box-shadow .22s}
-    .cta:hover{transform:translateY(-2px);box-shadow:0 16px 50px rgba(0,0,0,.5)}
-    .btn-ghost{border-radius:12px;padding:10px 14px;font-weight:700;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);transition:border-color .2s, transform .12s}
-    .btn-ghost:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.3)}
-    .ev{transition:transform .15s, box-shadow .2s}.ev:hover{transform:translateY(-2px);box-shadow:0 16px 50px rgba(0,0,0,.5)}
-    /* ===== KPIs ===== */
-    .kpi{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);border-radius:16px;padding:16px}
-    .kpi .n{font-size:1.75rem;font-weight:900;letter-spacing:-.02em}
-    /* ====== HELP & PQRS Polished ====== */
-    .panel{border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03));border-radius:18px;overflow:hidden}
-    .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px;border-bottom:1px solid rgba(255,255,255,.10)}
-    .panel-title{font-weight:900;font-size:1.15rem;letter-spacing:-.01em}
-    .panel-sub{color:rgba(255,255,255,.65);font-size:.9rem}
-    .chip{display:inline-flex;align-items:center;gap:.45rem;padding:.35rem .7rem;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);font-weight:700;font-size:.8rem}
-    /* Contacts */
-    .contact{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.05);transition:transform .12s, border-color .2s}
-    .contact:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.22)}
-    .contact .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:rgba(108,92,231,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-    /* Steps */
-    .steps-v{position:relative;border-left:1px dashed rgba(255,255,255,.18);padding-left:14px}
-    .steps-v .dot{position:absolute;left:-8px;top:6px;width:12px;height:12px;border-radius:999px;background:rgba(0,209,178,.6);box-shadow:0 0 0 3px rgba(0,209,178,.12)}
-    /* FAQ */
-    .faq details{border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.05);overflow:hidden}
-    .faq summary{cursor:pointer;font-weight:800;padding:12px 14px}
-    .faq .ans{padding:12px 14px;color:rgba(255,255,255,.78);border-top:1px solid rgba(255,255,255,.08)}
-    details[open] summary{background:rgba(255,255,255,.06)}
-    /* Form */
-    .field label{display:block;margin-bottom:6px;color:rgba(255,255,255,.8);font-size:.92rem}
-    .inputx,.textareax,.selectx,.filex{width:100%;padding:.9rem 1rem;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.14);color:#fff;outline:none;transition:border-color .16s, box-shadow .16s}
-    .inputx:focus,.textareax:focus,.selectx:focus,.filex:focus{border-color:rgba(0,209,178,.6);box-shadow:0 0 0 3px rgba(0,209,178,.16) inset}
-    .textareax{min-height:140px;resize:vertical}
-    .btn-cta{position:relative}
-    .btn-cta::after{content:"";position:absolute;inset:auto -10px -10px -10px;height:36px;filter:blur(18px);background:radial-gradient(closest-side,rgba(108,92,231,.35),transparent 70%);opacity:.55;pointer-events:none}
+    /* ===== Fondo general / layout ===== */
+    body{
+      background: radial-gradient(circle at top, #171a33 0, #050712 45%, #02030a 100%);
+    }
+
+    .page-shell{
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 2.3rem 1.5rem 3rem;
+    }
+    @media(min-width:1024px){
+      .page-shell{ padding-inline: 0; }
+    }
+
+    /* ===== Layout superior (hero + KPIs) ===== */
+    .top-grid{
+      display:grid;
+      gap:1.5rem;
+    }
+    @media(min-width:900px){
+      .top-grid{
+        grid-template-columns: minmax(0,1.7fr) minmax(0,.95fr);
+        align-items:stretch;
+      }
+    }
+
+    .card{
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.12);
+      background:radial-gradient(circle at top left,#6657ff3d 0,#0a0c16 45%,#050714 100%);
+      box-shadow:0 24px 80px rgba(0,0,0,.78);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background:
+        radial-gradient(circle at 0% 0%,rgba(124,92,255,.35),transparent 52%),
+        radial-gradient(circle at 100% 100%,rgba(0,209,178,.35),transparent 52%);
+      opacity:.35;
+      pointer-events:none;
+    }
+
+    .card-inner{
+      position:relative;
+      z-index:1;
+      padding:20px 20px 18px;
+    }
+
+    /* ===== Hero cliente ===== */
+    .hero-title{
+      font-size:1.85rem;
+      line-height:1.1;
+      font-weight:900;
+      letter-spacing:-.03em;
+    }
+    @media(min-width:768px){
+      .hero-title{ font-size:2.15rem; }
+    }
+    .hero-sub{
+      color:rgba(255,255,255,.76);
+      font-size:.95rem;
+      max-width:30rem;
+    }
+    .hero-tag{
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      padding:.3rem .8rem;
+      border-radius:999px;
+      font-size:.78rem;
+      border:1px solid rgba(255,255,255,.25);
+      background:rgba(0,0,0,.45);
+      color:rgba(255,255,255,.88);
+      margin-bottom:.5rem;
+    }
+    .hero-tag-bullet{
+      width:8px;height:8px;border-radius:999px;
+      background:#00d1b2;
+      box-shadow:0 0 0 4px rgba(0,209,178,.4);
+    }
+
+    .hero-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:.55rem;
+      margin-top:1rem;
+    }
+
+    /* Resumen de cuenta debajo del hero */
+    .account-strip{
+      margin-top:1rem;
+      padding:.65rem .8rem;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(120deg,rgba(7,10,24,.95),rgba(5,7,18,.98));
+      display:flex;
+      flex-wrap:wrap;
+      gap:.75rem;
+      align-items:center;
+      font-size:.78rem;
+    }
+    .account-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:.35rem;
+      padding:.2rem .6rem;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+    }
+    .account-pill span{
+      font-weight:700;
+    }
+    .account-status{
+      color:rgba(255,255,255,.72);
+    }
+
+    /* Buscador */
+    .search-bar{
+      margin-top:1rem;
+      border-radius:999px;
+      padding:.35rem .4rem;
+      background:rgba(4,5,14,.85);
+      border:1px solid rgba(255,255,255,.16);
+      display:flex;
+      align-items:center;
+      gap:.4rem;
+    }
+    .search-icon{
+      font-size:1.2rem;
+      opacity:.7;
+    }
+    .search-input{
+      flex:1;
+      border:none;
+      outline:none;
+      background:transparent;
+      color:#fff;
+      font-size:.9rem;
+      padding:.25rem .1rem;
+    }
+    .search-input::placeholder{
+      color:rgba(255,255,255,.55);
+    }
+    .search-btn{
+      border-radius:999px;
+      padding:.4rem .9rem;
+      font-size:.8rem;
+      border:none;
+      cursor:pointer;
+    }
+
+    .search-chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:.4rem;
+      margin-top:.6rem;
+      font-size:.72rem;
+    }
+    .search-chip{
+      border-radius:999px;
+      padding:.25rem .65rem;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.04);
+      color:rgba(255,255,255,.8);
+      text-decoration:none;
+      white-space:nowrap;
+    }
+    .search-chip:hover{
+      border-color:rgba(0,209,178,.7);
+      color:#fff;
+    }
+
+    /* ===== KPIs lado derecho ===== */
+    .kpi-stack{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      gap:.55rem;
+    }
+    .kpi-card{
+      flex:1;
+      border-radius:18px;
+      padding:12px 14px 11px;
+      border:1px solid rgba(255,255,255,.13);
+      background:linear-gradient(160deg,rgba(10,12,26,.9),rgba(8,9,20,.98));
+      box-shadow:0 14px 40px rgba(0,0,0,.75);
+      position:relative;
+      overflow:hidden;
+    }
+    .kpi-card::after{
+      content:"";
+      position:absolute;
+      inset:-20%;
+      background:radial-gradient(circle at 120% -10%,rgba(0,209,178,.45),transparent 60%);
+      opacity:.32;
+      pointer-events:none;
+    }
+    .kpi-label{
+      font-size:.74rem;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      color:rgba(255,255,255,.6);
+    }
+    .kpi-value{
+      font-size:1.7rem;
+      font-weight:900;
+      letter-spacing:-.03em;
+      margin-top:.2rem;
+    }
+    .kpi-foot{
+      font-size:.78rem;
+      color:rgba(255,255,255,.72);
+      margin-top:.15rem;
+    }
+    .kpi-pill{
+      position:absolute;
+      top:10px;right:12px;
+      border-radius:999px;
+      padding:.18rem .55rem;
+      font-size:.7rem;
+      background:rgba(255,255,255,.09);
+      color:rgba(255,255,255,.78);
+    }
+    .kpi-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:.25rem;
+      font-size:.7rem;
+      margin-top:.15rem;
+      color:rgba(0,255,196,.8);
+    }
+
+    /* ===== Botones neutrales ===== */
+    .btn-ghost{
+      border-radius:999px;
+      padding:8px 13px;
+      font-weight:700;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.06);
+      transition:border-color .18s, transform .12s, background .18s;
+      font-size:.82rem;
+    }
+    .btn-ghost:hover{
+      transform:translateY(-1px);
+      border-color:rgba(0,209,178,.7);
+      background:rgba(255,255,255,.08);
+    }
+
+    /* ===== Acciones rápidas ===== */
+    .quick-actions{
+      margin-top:1.9rem;
+      display:grid;
+      gap:.9rem;
+    }
+    @media(min-width:900px){
+      .quick-actions{
+        grid-template-columns:repeat(4,minmax(0,1fr));
+      }
+    }
+    .quick-action{
+      border-radius:16px;
+      padding:11px 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(160deg,rgba(9,11,24,.96),rgba(4,5,14,.98));
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      cursor:pointer;
+      transition:transform .15s, box-shadow .2s, border-color .18s;
+      text-decoration:none;
+      color:#fff;
+    }
+    .quick-action:hover{
+      transform:translateY(-2px);
+      box-shadow:0 16px 45px rgba(0,0,0,.75);
+      border-color:rgba(0,209,178,.7);
+    }
+    .qa-icon{
+      width:28px;height:28px;border-radius:10px;
+      display:grid;place-items:center;
+      background:rgba(115,102,255,.2);
+      font-size:1.1rem;
+    }
+    .qa-title{
+      font-size:.86rem;font-weight:800;
+    }
+    .qa-sub{
+      font-size:.76rem;color:rgba(255,255,255,.7);
+    }
+
+    /* ===== Recomendados ===== */
+    .section-head{
+      margin-top:2.4rem;
+      margin-bottom:.9rem;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:1rem;
+    }
+    .section-head h2{
+      font-size:1.2rem;
+      font-weight:800;
+    }
+    .section-sub{
+      font-size:.8rem;color:rgba(255,255,255,.68);
+    }
+
+    .events-grid{
+      display:grid;
+      gap:1.1rem;
+    }
+    @media(min-width:768px){
+      .events-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+    }
+
+    /* ===== Tarjetas de eventos refinadas ===== */
+    .event-card{
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.06);
+      background:linear-gradient(150deg,rgba(15,18,32,.96),rgba(7,9,21,.98));
+      box-shadow:0 12px 30px rgba(0,0,0,.55);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      transition:transform .18s, box-shadow .22s, border-color .18s;
+      height:auto;
+    }
+    .event-card:hover{
+      transform:translateY(-2px);
+      box-shadow:0 18px 55px rgba(0,0,0,.7);
+      border-color:rgba(0,209,178,.45);
+    }
+
+    .event-image{
+      position:relative;
+      overflow:hidden;
+      height:145px;
+      background:#070814;
+    }
+    .event-image img{
+      width:100%;
+      height:145px;
+      object-fit:cover;
+      display:block;
+      transform:scale(1.03);
+      transition:transform .22s ease;
+    }
+    .event-card:hover .event-image img{
+      transform:scale(1.06);
+    }
+    .event-image::after{
+      content:"";
+      position:absolute;
+      inset:auto 0 0 0;
+      height:38%;
+      background:linear-gradient(to top,rgba(5,7,18,.88),transparent);
+      pointer-events:none;
+    }
+
+    .event-body{
+      padding:12px 14px 13px;
+      display:flex;
+      flex-direction:column;
+      gap:.32rem;
+    }
+
+    .event-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:.15rem;
+    }
+    .pill-destacado{
+      padding:.15rem .5rem;
+      font-size:.63rem;
+      border-radius:999px;
+      background:rgba(132,96,255,.28);
+      text-transform:uppercase;
+      letter-spacing:.12em;
+    }
+    .event-id{
+      font-size:.68rem;
+      color:rgba(255,255,255,.55);
+    }
+
+    .event-title{
+      font-size:.92rem;
+      font-weight:800;
+      line-height:1.2;
+      margin-bottom:.2rem;
+    }
+    .event-meta{
+      font-size:.74rem;
+      color:rgba(255,255,255,.7);
+    }
+    .event-meta span{
+      display:inline-flex;
+      align-items:center;
+      gap:.3rem;
+    }
+    .event-price{
+      font-size:1.05rem;
+      font-weight:900;
+      color:#00ff9a;
+      margin-top:.2rem;
+    }
+
+    .event-actions{
+      margin-top:.55rem;
+      display:flex;
+      gap:.4rem;
+    }
+    .event-actions a{
+      font-size:.74rem !important;
+      padding:.45rem .8rem !important;
+      border-radius:10px !important;
+    }
+
+    /* ===== Bloque inferior (tickets / ayuda) ===== */
+    .bottom-grid{
+      margin-top:2.4rem;
+      display:grid;
+      gap:1.4rem;
+    }
+    @media(min-width:960px){
+      .bottom-grid{
+        grid-template-columns: minmax(0,1.1fr) minmax(0,.95fr);
+      }
+    }
+
+    .panel{
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(160deg,rgba(12,14,30,.96),rgba(4,5,14,.98));
+      box-shadow:0 18px 60px rgba(0,0,0,.78);
+      overflow:hidden;
+    }
+    .panel-head{
+      padding:14px 16px;
+      border-bottom:1px solid rgba(255,255,255,.12);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:.6rem;
+    }
+    .panel-title{
+      font-size:1rem;
+      font-weight:800;
+    }
+    .panel-sub{
+      font-size:.8rem;
+      color:rgba(255,255,255,.68);
+    }
+    .panel-body{
+      padding:14px 16px 15px;
+    }
+
+    .activity-list{
+      font-size:.8rem;
+      color:rgba(255,255,255,.8);
+      display:flex;
+      flex-direction:column;
+      gap:.25rem;
+      margin-top:.45rem;
+    }
+    .activity-empty{
+      font-size:.78rem;
+      color:rgba(255,255,255,.6);
+      margin-top:.4rem;
+    }
+
+    .tips-list{
+      margin-top:.8rem;
+      font-size:.78rem;
+      color:rgba(255,255,255,.78);
+      display:flex;
+      flex-direction:column;
+      gap:.35rem;
+    }
+
+    .tips-inline{
+      margin-top:.6rem;
+      display:flex;
+      flex-wrap:wrap;
+      gap:.5rem;
+      font-size:.75rem;
+      color:rgba(255,255,255,.7);
+    }
+
+    .tips-inline span{
+      border-radius:999px;
+      padding:.2rem .55rem;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+    }
+
+    /* PQRS mini form */
+    .field label{
+      display:block;
+      margin-bottom:4px;
+      font-size:.78rem;
+      color:rgba(255,255,255,.8);
+    }
+    .inputx,
+    .selectx,
+    .textareax{
+      width:100%;
+      padding:.7rem .8rem;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.13);
+      background:rgba(255,255,255,.03);
+      color:#fff;
+      font-size:.8rem;
+      outline:none;
+      transition:border-color .16s, box-shadow .16s, background .14s;
+    }
+    .inputx:focus,
+    .selectx:focus,
+    .textareax:focus{
+      border-color:rgba(0,209,178,.75);
+      box-shadow:0 0 0 1px rgba(0,209,178,.65);
+      background:rgba(255,255,255,.05);
+    }
+    .textareax{
+      resize:vertical;
+      min-height:80px;
+    }
+
+    .pqrs-footer{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:.6rem;
+      margin-top:.7rem;
+    }
+    .pqrs-footer label{
+      font-size:.75rem;
+      color:rgba(255,255,255,.78);
+    }
+
+    .faq-chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:.4rem;
+      margin-top:.7rem;
+      font-size:.75rem;
+    }
+    .faq-chip{
+      border-radius:999px;
+      padding:.25rem .6rem;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.05);
+      cursor:default;
+      color:rgba(255,255,255,.82);
+    }
+
+    /* Acordeón FAQ dentro de ayuda */
+    .faq-accordion{
+      margin-top:.9rem;
+      font-size:.78rem;
+      color:rgba(255,255,255,.8);
+    }
+    .faq-accordion details{
+      background:rgba(255,255,255,.03);
+      border-radius:10px;
+      margin-bottom:.35rem;
+      padding:.45rem .6rem;
+      border:1px solid transparent;
+    }
+    .faq-accordion details[open]{
+      border-color:rgba(0,209,178,.7);
+      background:rgba(255,255,255,.04);
+    }
+    .faq-accordion summary{
+      cursor:pointer;
+      list-style:none;
+    }
+    .faq-accordion summary::-webkit-details-marker{
+      display:none;
+    }
+
+    /* Animaciones */
+    @keyframes fadeUp{
+      from{opacity:0;transform:translateY(10px);}
+      to{opacity:1;transform:translateY(0);}
+    }
+    .animate-fadeUp{
+      animation:fadeUp .45s ease forwards;
+    }
+
+    /* Ripple simple */
+    .ripple{
+      position:relative;
+      overflow:hidden;
+    }
+    .ripple span{
+      position:absolute;
+      border-radius:50%;
+      transform:scale(0);
+      animation:rippleAnim .6s linear;
+      background:rgba(255,255,255,.35);
+      pointer-events:none;
+    }
+    @keyframes rippleAnim{
+      to{transform:scale(3);opacity:0;}
+    }
+
+    /* Adaptaciones mobile */
+    @media(max-width:640px){
+      .hero-title{ font-size:1.6rem; }
+      .card-inner{ padding:16px 14px 14px; }
+      .panel-head, .panel-body{ padding-inline:12px; }
+      .quick-action{ padding:10px; }
+    }
   </style>
 </head>
+
 <body class="text-white font-sans">
   <%@ include file="../Includes/nav_base.jspf" %>
 
-  <main class="max-w-6xl mx-auto px-5 py-10">
-    <!-- Header / acciones -->
-    <section class="mb-8">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 class="text-3xl md:text-4xl font-extrabold">
-            Hola, <%= (name!=null? name : "usuario") %> <span aria-hidden="true">👋</span>
+  <main class="page-shell">
+    <!-- ===== TOP: HERO + KPIs ===== -->
+    <section class="top-grid">
+      <!-- HERO CLIENTE -->
+      <div class="card animate-fadeUp">
+        <div class="card-inner">
+          <div class="hero-tag">
+            <span class="hero-tag-bullet"></span>
+            Panel de control de tu cuenta
+          </div>
+          <h1 class="hero-title">
+            Hola, <%= (name != null ? name : "usuario") %> 👋
           </h1>
-          <p class="text-white/70 mt-1">Aquí tienes un resumen y accesos rápidos a tus eventos, tickets y ayuda.</p>
+          <p class="hero-sub mt-2">
+            Desde aquí puedes encontrar nuevos eventos, gestionar tus tickets,
+            descargar comprobantes y abrir PQRS sin perderte de nada.
+          </p>
+
+          <!-- Mini resumen de cuenta -->
+          <div class="account-strip">
+            <div class="account-status">
+              <strong>Estado de tu cuenta:</strong>
+              <% if (hasUpcoming) { %>
+                Tienes eventos próximos en tu agenda. 🎉
+              <% } else if (hasTickets) { %>
+                Tienes tickets activos, pero sin eventos próximos.
+              <% } else { %>
+                Aún no has comprado tickets. Empieza explorando eventos. 💜
+              <% } %>
+            </div>
+            <div class="account-pill">
+              <span><%= kTot %></span> tickets totales
+            </div>
+            <div class="account-pill">
+              <span><%= kUp %></span> eventos próximos
+            </div>
+            <div class="account-pill">
+              <span><%= kRef %></span> reembolsos
+            </div>
+          </div>
+
+          <!-- Buscador de eventos / ticket -->
+          <form class="search-bar" method="get"
+                action="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">
+            <span class="material-icons search-icon">search</span>
+            <input class="search-input"
+                   type="text"
+                   name="q"
+                   placeholder="Buscar eventos o escribir código de ticket (ej: SIM-12345)">
+            <button class="btn-primary search-btn ripple" type="submit">
+              Buscar
+            </button>
+          </form>
+
+          <!-- Chips de búsqueda rápida -->
+          <div class="search-chips" aria-label="Filtros rápidos de búsqueda">
+            <a class="search-chip"
+               href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp?orden=proximos">
+              Próximos a ocurrir
+            </a>
+            <a class="search-chip"
+               href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp?tipo=concierto">
+              Conciertos
+            </a>
+            <a class="search-chip"
+               href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp?ciudad=Buga">
+              En Buga
+            </a>
+            <a class="search-chip"
+               href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp?precio=low">
+              Entradas económicas
+            </a>
+          </div>
+
+          <!-- Acciones principales -->
+          <div class="hero-actions">
+            <a class="btn-primary ripple"
+               href="<%= request.getContextPath() %>/Vista/MisTickets.jsp">
+              Ver mis tickets
+            </a>
+            <a class="btn-ghost ripple"
+               href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">
+              Explorar eventos
+            </a>
+            <a class="btn-ghost ripple"
+               href="<%= request.getContextPath() %>/Vista/HistorialCompras.jsp">
+              Historial de compras
+            </a>
+            <a class="btn-ghost ripple"
+               href="<%= request.getContextPath() %>/Vista/PerfilCliente.jsp">
+              Editar perfil
+            </a>
+            <% if ("ORGANIZADOR".equalsIgnoreCase(String.valueOf(role))) { %>
+              <a class="btn-ghost ripple"
+                 href="<%= request.getContextPath() %>/Vista/EventosOrganizador.jsp">
+                Panel organizador
+              </a>
+            <% } %>
+          </div>
         </div>
-        <div class="flex flex-wrap gap-2">
-          <a class="btn-primary ripple" href="<%= request.getContextPath() %>/Vista/PaginaPrincipal.jsp">Ir a inicio</a>
-          <a class="btn-ghost ripple" href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">Explorar eventos</a>
-          <a class="btn-ghost ripple" href="<%= request.getContextPath() %>/Vista/MisTickets.jsp">Mis tickets</a>
-          <% if ("ORGANIZADOR".equalsIgnoreCase(String.valueOf(role))) { %>
-            <a class="btn-ghost ripple" href="<%= request.getContextPath() %>/Vista/EventosOrganizador.jsp">Panel organizador</a>
+      </div>
+
+      <!-- KPI STACK -->
+      <div class="kpi-stack animate-fadeUp" style="animation-delay:.08s">
+        <div class="kpi-card">
+          <div class="kpi-pill">Total</div>
+          <div class="kpi-label">Tickets en tu cuenta</div>
+          <div class="kpi-value"><%= kTot %></div>
+          <div class="kpi-foot">Entradas adquiridas con tu correo.</div>
+          <% if (hasTickets) { %>
+            <div class="kpi-badge">🎫 Recuerda revisar la sección “Mis tickets”.</div>
           <% } %>
         </div>
+        <div class="kpi-card">
+          <div class="kpi-pill">Próximos</div>
+          <div class="kpi-label">Eventos pendientes</div>
+          <div class="kpi-value text-aqua"><%= kUp %></div>
+          <div class="kpi-foot">No los pierdas, revisa la fecha y lugar.</div>
+          <% if (hasUpcoming) { %>
+            <div class="kpi-badge">⏰ Te enviaremos recordatorios antes del evento.</div>
+          <% } else { %>
+            <div class="kpi-badge">✨ Explora nuevos eventos y arma tu agenda.</div>
+          <% } %>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-pill">Reembolsos</div>
+          <div class="kpi-label">Tickets reembolsados</div>
+          <div class="kpi-value"><%= kRef %></div>
+          <div class="kpi-foot">Según políticas del organizador.</div>
+        </div>
       </div>
     </section>
 
-    <!-- KPIs -->
-    <section class="grid sm:grid-cols-3 gap-4 mb-8">
-      <div class="kpi"><div class="text-white/70 text-sm">Tickets totales</div><div class="n"><%= kTot %></div></div>
-      <div class="kpi"><div class="text-white/70 text-sm">Próximos</div><div class="n text-aqua"><%= kUp %></div></div>
-      <div class="kpi"><div class="text-white/70 text-sm">Reembolsados</div><div class="n"><%= kRef %></div></div>
-    </section>
-
-    <!-- Quick cards -->
-    <section class="grid md:grid-cols-3 gap-4 mb-10">
-      <a class="cta block" href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">
-        <div class="flex items-center gap-3"><div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">🎉</div>
-          <div><div class="font-extrabold">Próximos eventos</div><div class="text-white/70 text-sm">Recomendados para ti</div></div>
-        </div>
-      </a>
-      <a class="cta block" href="<%= request.getContextPath() %>/Vista/MisTickets.jsp">
-        <div class="flex items-center gap-3"><div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">🎫</div>
-          <div><div class="font-extrabold">Mis tickets</div><div class="text-white/70 text-sm">Descarga o transfiere</div></div>
-        </div>
-      </a>
-      <a class="cta block" href="<%= request.getContextPath() %>/Vista/HistorialCompras.jsp">
-        <div class="flex items-center gap-3"><div class="w-10 h-10 grid place-items-center rounded-lg bg-primary/25">📜</div>
-          <div><div class="font-extrabold">Historial</div><div class="text-white/70 text-sm">Compras pasadas</div></div>
-        </div>
-      </a>
-    </section>
-
-    <!-- Recomendados -->
-    <section class="mb-12">
-      <div class="flex items-end justify-between mb-3">
+    <!-- ===== ACCIONES RÁPIDAS ===== -->
+    <section class="quick-actions" aria-label="Acciones rápidas">
+      <a class="quick-action"
+         href="<%= request.getContextPath() %>/Vista/MisTickets.jsp">
+        <div class="qa-icon">🎫</div>
         <div>
-          <h2 class="text-2xl font-bold">Recomendados para ti</h2>
-          <p class="text-white/60">Próximamente</p>
+          <div class="qa-title">Mostrar QR de entrada</div>
+          <div class="qa-sub">Ten a mano tus códigos para el acceso.</div>
         </div>
-        <a class="text-white/70 hover:text-white transition font-semibold"
-           href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">Ver todos →</a>
+      </a>
+
+      <a class="quick-action"
+         href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">
+        <div class="qa-icon">🎉</div>
+        <div>
+          <div class="qa-title">Explorar nuevos eventos</div>
+          <div class="qa-sub">Conciertos, festivales y más cerca de ti.</div>
+        </div>
+      </a>
+
+      <a class="quick-action"
+         href="<%= request.getContextPath() %>/Vista/HistorialCompras.jsp">
+        <div class="qa-icon">📜</div>
+        <div>
+          <div class="qa-title">Descargar comprobantes</div>
+          <div class="qa-sub">Revisa pagos anteriores y facturación.</div>
+        </div>
+      </a>
+
+      <a class="quick-action"
+         href="<%= request.getContextPath() %>/Vista/PerfilCliente.jsp">
+        <div class="qa-icon">👤</div>
+        <div>
+          <div class="qa-title">Datos de tu perfil</div>
+          <div class="qa-sub">Actualiza correo, nombre y contraseña.</div>
+        </div>
+      </a>
+    </section>
+
+    <!-- ===== RECOMENDADOS ===== -->
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Eventos recomendados</h2>
+          <p class="section-sub">
+            Basado en popularidad y fechas próximas.
+          </p>
+        </div>
+        <a class="text-white/70 hover:text-white transition font-semibold text-xs sm:text-sm"
+           href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp">
+          Ver todos →
+        </a>
       </div>
 
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div class="events-grid">
         <%
           if (recs != null && !recs.isEmpty()) {
             int i = 0;
             for (Event ev : recs) {
-              String dateStr = (ev.getDateTime()!=null) ? ev.getDateTime().format(df) : ev.getDate();
-              String buyUrl  = (session.getAttribute("userId") == null)
-                               ? request.getContextPath() + "/Vista/Login.jsp"
-                               : request.getContextPath() + "/Vista/Checkout.jsp?eventId=" + ev.getId() + "&qty=1";
+
+              String dateStr = (ev.getDateTime()!=null)
+                               ? ev.getDateTime().format(df)
+                               : ev.getDate();
+
+              String img     = ev.getImage();
+              String imgAlt;
+              try {
+                  imgAlt = (ev.getImageAlt() != null && !ev.getImageAlt().trim().isEmpty())
+                           ? ev.getImageAlt()
+                           : ev.getTitle();
+              } catch (Exception ignore) {
+                  imgAlt = ev.getTitle();
+              }
+
+              String imgSrc;
+              if (img != null && !img.trim().isEmpty()) {
+                if (img.startsWith("http://") || img.startsWith("https://")) {
+                  imgSrc = img;
+                } else {
+                  imgSrc = request.getContextPath() + "/" + img;
+                }
+              } else {
+                imgSrc = "https://images.unsplash.com/photo-1518972559570-7cc1309f3229?auto=format&fit=crop&w=900&q=80";
+              }
+
+              // URL de detalles del evento (para comprar y ver info)
+              String detailUrl = request.getContextPath()
+                                + "/Vista/EventoDetalle.jsp?id=" + ev.getId();
         %>
-        <article class="ev glass ring rounded-2xl p-5 animate-fadeUp" style="animation-delay:<%= (i++ * 0.06) %>s">
-          <div class="flex items-center justify-between mb-2">
-            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-primary/20 text-white">★ Destacado</span>
+        <article class="event-card animate-fadeUp" style="animation-delay:<%= (i++ * 0.06) %>s">
+          <div class="event-image">
+            <img src="<%= imgSrc %>" alt="<%= imgAlt %>">
           </div>
-          <h3 class="font-bold text-lg line-clamp-2"><%= ev.getTitle() %></h3>
-          <p class="text-white/70">📅 <%= dateStr %> • 📍 <%= ev.getVenue()!=null?ev.getVenue():"" %></p>
-          <p class="mt-2 text-xl font-extrabold"><%= ev.getPriceFormatted() %></p>
-          <div class="mt-4 flex gap-2">
-            <a class="btn-primary ripple" href="<%= buyUrl %>">Comprar</a>
-            <a class="btn-ghost ripple" href="<%= request.getContextPath() %>/Vista/EventoDetalle.jsp?id=<%= ev.getId() %>">Ver detalles</a>
+          <div class="event-body">
+            <div class="event-top">
+              <span class="pill-destacado">Destacado</span>
+              <span class="event-id">ID #<%= ev.getId() %></span>
+            </div>
+            <div class="event-title"><%= ev.getTitle() %></div>
+            <div class="event-meta">
+              <span>📅 <%= dateStr %></span><br>
+              <span>📍 <%= ev.getVenue()!=null ? ev.getVenue() : "Lugar por confirmar" %></span>
+            </div>
+            <div class="event-price"><%= ev.getPriceFormatted() %></div>
+            <div class="event-actions">
+              <!-- AHORA COMPRAR LLEVA A EVENTO DETALLE -->
+              <a class="btn-primary ripple"
+                 href="<%= detailUrl %>">
+                Comprar ahora
+              </a>
+              <a class="btn-ghost ripple"
+                 href="<%= detailUrl %>">
+                Ver detalles
+              </a>
+            </div>
           </div>
         </article>
         <%
             } // for
           } else {
         %>
-        <div class="col-span-full glass ring rounded-2xl p-8 text-center text-white/70">
-          No hay eventos recomendados por ahora.
+        <div class="glass ring rounded-2xl p-8 text-center text-white/70 text-sm">
+          No hay eventos recomendados por ahora. Muy pronto verás aquí nuevas sugerencias para ti.
         </div>
         <% } %>
       </div>
     </section>
 
-    <!-- ===== Centro de ayuda + PQRS ===== -->
-    <section class="grid xl:grid-cols-2 gap-6">
-      <!-- Centro de ayuda -->
+    <!-- ===== BLOQUE INFERIOR: TICKETS + AYUDA / PQRS ===== -->
+    <section class="bottom-grid">
+      <!-- Panel: tus tickets y actividad -->
       <div class="panel">
         <div class="panel-head">
           <div>
-            <div class="panel-title">Centro de ayuda</div>
-            <div class="panel-sub">Guías rápidas y soporte</div>
+            <div class="panel-title">Tus tickets y actividad</div>
+            <div class="panel-sub">Acceso rápido a tu cuenta.</div>
           </div>
-          <div class="hidden md:flex gap-2">
-            <a href="<%= request.getContextPath() %>/Vista/MisTickets.jsp" class="chip">Ver mis tickets</a>
-            <a href="<%= request.getContextPath() %>/Vista/ExplorarEventos.jsp" class="chip">Explorar</a>
+          <a class="btn-ghost ripple text-xs"
+             href="<%= request.getContextPath() %>/Vista/MisTickets.jsp">
+            Ver todos
+          </a>
+        </div>
+        <div class="panel-body">
+          <p class="text-xs text-white/70">
+            Desde <b>Mis tickets</b> puedes mostrar el QR, transferir a otra persona,
+            descargar comprobantes y revisar el estado de cada entrada.
+          </p>
+
+          <div class="tips-list">
+            <div>• Consulta la hora y puerta de acceso antes de salir de casa.</div>
+            <div>• Si no vas a asistir, usa la opción <b>Transferir ticket</b>.</div>
+            <div>• Revisa que el correo de confirmación no haya llegado a SPAM.</div>
+          </div>
+
+          <div class="tips-inline">
+            <span>QR legible con brillo máximo</span>
+            <span>Ten tu documento a la mano</span>
+            <span>Llega con anticipación</span>
+          </div>
+
+          <hr class="border-white/10 my-3">
+
+          <h4 class="text-xs font-semibold text-white/70">Actividad reciente</h4>
+          <%
+            if (recent != null && !recent.isEmpty()) {
+          %>
+          <ul class="activity-list">
+            <% for (String item : recent) { %>
+              <li>• <%= item %></li>
+            <% } %>
+          </ul>
+          <% } else { %>
+          <div class="activity-empty">
+            Aún no registramos movimientos recientes. Tus próximas compras aparecerán aquí.
+          </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Panel: ayuda + PQRS -->
+      <div class="panel" id="pqrs-block">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Ayuda rápida / PQRS</div>
+            <div class="panel-sub">
+              Reporta problemas con pagos o acceso a eventos.
+            </div>
           </div>
         </div>
+        <div class="panel-body">
+          <form action="<%= request.getContextPath() %>/Control/ct_pqrs.jsp"
+                method="post" enctype="multipart/form-data"
+                id="pqrsForm" novalidate>
+            <input type="hidden" name="userId" value="<%= uid %>">
 
-        <div class="p-6 grid md:grid-cols-2 gap-5">
-          <!-- Contactos -->
-          <div class="space-y-3">
-            <div class="contact"><div class="ico">💬</div><div><div class="font-extrabold">Chat de soporte</div><div class="text-white/60 text-sm">Tiempo de respuesta &lt; 2h</div></div></div>
-            <div class="contact"><div class="ico">📧</div><div><div class="font-extrabold">Email</div><div class="text-white/60 text-sm">soporte@livepassbuga.com</div></div></div>
-            <div class="contact"><div class="ico">📞</div><div><div class="font-extrabold">Línea prioritaria</div><div class="text-white/60 text-sm">L–V 8:00–18:00</div></div></div>
-          </div>
+            <div class="grid gap-3">
+              <div class="field">
+                <label>Tipo de solicitud</label>
+                <select name="type" class="selectx" required>
+                  <option value="">— Seleccionar —</option>
+                  <option value="PETICION">Petición</option>
+                  <option value="QUEJA">Queja</option>
+                  <option value="RECLAMO">Reclamo</option>
+                  <option value="SUGERENCIA">Sugerencia</option>
+                </select>
+              </div>
 
-          <!-- Pasos + actividad -->
-          <div class="space-y-4">
-            <div class="contact" style="display:block">
-              <div class="font-extrabold mb-2">¿Problema con una compra?</div>
-              <div class="steps-v space-y-3">
-                <div class="relative pl-2"><span class="dot"></span> Abre <b>Mis tickets</b> y verifica compra/ref.</div>
-                <div class="relative pl-2"><span class="dot"></span> Revisa correo de confirmación (SPAM/Promociones).</div>
-                <div class="relative pl-2"><span class="dot"></span> Si continúa, envía una <b>PQRS</b> con referencia y detalle.</div>
+              <div class="field">
+                <label>Referencia de pago (opcional)</label>
+                <input class="inputx" name="payment_ref"
+                       placeholder="Ej: SIM-12345-678">
+              </div>
+
+              <div class="field">
+                <label>Asunto</label>
+                <input class="inputx" name="subject" required
+                       placeholder="Resúmen corto del caso">
+              </div>
+
+              <div class="field">
+                <label>Mensaje</label>
+                <textarea class="textareax" name="message" required
+                          placeholder="Cuéntanos qué ocurrió, con fechas, evento y detalles."></textarea>
+              </div>
+
+              <div class="field">
+                <label>Adjunto (opcional)</label>
+                <input type="file" class="inputx" name="attachment"
+                       accept=".pdf,.jpg,.jpeg,.png">
               </div>
             </div>
 
-            <% if (recent != null && !recent.isEmpty()) { %>
-              <div class="contact" style="display:block">
-                <div class="font-extrabold mb-2">Actividad reciente</div>
-                <ul class="space-y-1 text-white/75">
-                  <% for (String item : recent) { %><li>• <%= item %></li><% } %>
-                </ul>
-              </div>
-            <% } %>
+            <div class="pqrs-footer">
+              <label class="inline-flex items-center gap-2">
+                <input type="checkbox" name="notify" class="accent-current" checked>
+                <span>Recibir notificaciones por correo.</span>
+              </label>
+              <button type="submit"
+                      class="btn-primary ripple px-4 py-2 rounded-xl text-xs sm:text-sm">
+                Enviar PQRS
+              </button>
+            </div>
+          </form>
+
+          <div class="faq-chips">
+            <span class="faq-chip">No llegó el correo</span>
+            <span class="faq-chip">Problema con el QR</span>
+            <span class="faq-chip">Reembolso</span>
+            <span class="faq-chip">Datos de facturación</span>
+          </div>
+
+          <!-- Mini FAQ expandible para UX -->
+          <div class="faq-accordion" aria-label="Preguntas frecuentes">
+            <details>
+              <summary>¿Cuánto tarda en llegar el correo de confirmación?</summary>
+              <p class="mt-1">
+                Normalmente llega en pocos minutos. Si no lo ves, revisa SPAM o la
+                pestaña de promociones de tu correo.
+              </p>
+            </details>
+            <details>
+              <summary>Mi QR no se lee en el punto de acceso</summary>
+              <p class="mt-1">
+                Sube el brillo de la pantalla, evita capturas borrosas y agranda el código.
+                Si el problema continúa, acércate al punto de información del evento.
+              </p>
+            </details>
+            <details>
+              <summary>¿Cómo solicito un reembolso?</summary>
+              <p class="mt-1">
+                Usa este formulario PQRS indicando la referencia de pago y el evento.
+                El organizador revisará tu caso según sus políticas de reembolso.
+              </p>
+            </details>
           </div>
         </div>
-
-        <div class="p-6 pt-0">
-          <div class="faq grid md:grid-cols-3 gap-4">
-            <details><summary>No llegó el correo</summary><div class="ans">Busca en SPAM/Promociones. Valídalo también en <b>Mis tickets</b>.</div></details>
-            <details><summary>Reembolsos</summary><div class="ans">Dependen de la política del organizador. Envíanos una <b>PQRS</b>.</div></details>
-            <details><summary>Transferencias</summary><div class="ans">Se hacen desde <b>Mis tickets → Transferir</b>.</div></details>
-          </div>
-        </div>
-      </div>
-
-      <!-- PQRS -->
-      <div class="panel">
-        <div class="panel-head">
-          <div>
-            <div class="panel-title">Crear PQRS</div>
-            <div class="panel-sub">Respuesta promedio &lt; 24h</div>
-          </div>
-          <div class="hidden md:flex gap-2">
-            <span class="chip">Ref de pago ayuda</span>
-            <span class="chip">Adjunta evidencia</span>
-          </div>
-        </div>
-
-        <form action="<%= request.getContextPath() %>/Control/ct_pqrs.jsp"
-              method="post" enctype="multipart/form-data"
-              class="p-6 grid md:grid-cols-2 gap-4" id="pqrsForm" novalidate>
-          <input type="hidden" name="userId" value="<%= uid %>">
-
-          <div class="field">
-            <label>Tipo</label>
-            <select name="type" class="selectx" required>
-              <option value="">— Seleccionar —</option>
-              <option value="PETICION">Petición</option>
-              <option value="QUEJA">Queja</option>
-              <option value="RECLAMO">Reclamo</option>
-              <option value="SUGERENCIA">Sugerencia</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>Referencia de pago (opcional)</label>
-            <input class="inputx" name="payment_ref" placeholder="Ej: SIM-12345-678">
-          </div>
-
-          <div class="field md:col-span-2">
-            <label>Asunto</label>
-            <input class="inputx" name="subject" required placeholder="Breve resumen del caso">
-          </div>
-
-          <div class="field md:col-span-2">
-            <label>Mensaje</label>
-            <textarea class="textareax" name="message" required placeholder="Describe tu solicitud con el mayor detalle posible"></textarea>
-          </div>
-
-          <div class="field">
-            <label>Adjunto (opcional)</label>
-            <input type="file" class="filex" name="attachment" accept=".pdf,.jpg,.jpeg,.png">
-          </div>
-
-          <div class="md:col-span-2 flex items-center justify-between gap-3">
-            <label class="inline-flex items-center gap-2 text-sm text-white/80">
-              <input type="checkbox" name="notify" class="accent-current" checked>
-              Notificar por correo el estado de mi PQRS
-            </label>
-            <button class="btn-primary btn-cta ripple px-5 py-3 rounded-xl" type="submit">Enviar PQRS</button>
-          </div>
-        </form>
-      </div>
-    </section>
-
-    <!-- Preferencias + Seguridad -->
-    <section class="grid lg:grid-cols-2 gap-6 mt-8">
-      <div class="glass ring rounded-2xl p-6">
-        <h3 class="text-xl font-extrabold mb-2">Preferencias rápidas</h3>
-        <div class="space-y-3 text-white/80">
-          <label class="flex items-center justify-between gap-3"><span>Recordatorios del evento</span><input type="checkbox" class="accent-current" checked></label>
-          <label class="flex items-center justify-between gap-3"><span>Alertas de cambios del organizador</span><input type="checkbox" class="accent-current" checked></label>
-          <label class="flex items-center justify-between gap-3"><span>Promociones y novedades</span><input type="checkbox" class="accent-current"></label>
-        </div>
-      </div>
-      <div class="glass ring rounded-2xl p-6">
-        <h3 class="text-xl font-extrabold mb-2">Seguridad de tus tickets</h3>
-        <ul class="list-disc pl-5 text-white/80 space-y-2">
-          <li>No compartas capturas del QR en redes.</li>
-          <li>Transfiere tickets desde “Mis tickets” si no vas a asistir.</li>
-          <li>Verifica siempre que compras desde <b>Livepass Buga</b>.</li>
-        </ul>
       </div>
     </section>
   </main>
@@ -307,16 +1087,28 @@
       if (!f) return;
       f.addEventListener('submit', function(e){
         const ok = f.type.value && f.subject.value.trim() && f.message.value.trim();
-        if (!ok){ e.preventDefault(); alert('Completa Tipo, Asunto y Mensaje.'); }
+        if (!ok){
+          e.preventDefault();
+          alert('Completa Tipo, Asunto y Mensaje para enviar tu PQRS.');
+        }
       });
     })();
 
     // Ripple
-    (function(){ document.querySelectorAll('.ripple').forEach(b=>b.addEventListener('click',function(e){
-      const r=this.getBoundingClientRect(),s=document.createElement('span'),z=Math.max(r.width,r.height);
-      s.style.width=s.style.height=z+'px'; s.style.left=(e.clientX-r.left-z/2)+'px'; s.style.top=(e.clientY-r.top-z/2)+'px';
-      this.appendChild(s); setTimeout(()=>s.remove(),600);
-    }));})();
+    (function(){
+      document.querySelectorAll('.ripple').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          const r = this.getBoundingClientRect();
+          const s = document.createElement('span');
+          const z = Math.max(r.width, r.height);
+          s.style.width = s.style.height = z + 'px';
+          s.style.left = (e.clientX - r.left - z/2) + 'px';
+          s.style.top  = (e.clientY - r.top  - z/2) + 'px';
+          this.appendChild(s);
+          setTimeout(function(){ s.remove(); }, 600);
+        });
+      });
+    })();
   </script>
 </body>
 </html>

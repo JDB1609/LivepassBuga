@@ -278,7 +278,7 @@
             <p class="text-sm text-white/80">
                 Zona de barras, experiencias y momentos para compartir antes y después del show.
             </p>
-            <img src="https://images.unsplash.com/photo-1526481280695-3c687fd543c0?auto=format&fit=crop&w=900&q=80"
+            <img src="https://th.bing.com/th/id/R.030be5882079eb876df121bbdfbbd5fe?rik=uKosciQ4J1q7eQ&pid=ImgRaw&r=0"
                  alt="Experiencia" class="mt-2 rounded-xl object-cover h-40 w-full">
         </div>
     </section>
@@ -293,7 +293,7 @@
         <div class="grid lg:grid-cols-2 gap-6">
             <!-- MAPA DE SECTORES -->
             <div class="lp-card p-5 flex flex-col items-center justify-center">
-                <img src="https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&fit=crop&w=900&q=80"
+                <img src="https://th.bing.com/th/id/R.6e63a8e3ff5b22819bec547e1aeb78df?rik=C2eapoJm9tEwnw&riu=http%3a%2f%2fconsorcioiee.com%2fwp-content%2fuploads%2f2022%2f08%2filuminacion-auditorios-1.jpg&ehk=cknlrS%2bM4Sx7rhqDTHLgFzfal0wOY6BDj90AYH6maNg%3d&risl=&pid=ImgRaw&r=0"
                      alt="Mapa de sectores" class="seating-img rounded-2xl object-cover">
                 <p class="mt-3 text-xs text-white/60 text-center">
                     Referencia de sectores. Personaliza esta imagen por el mapa de tu evento.
