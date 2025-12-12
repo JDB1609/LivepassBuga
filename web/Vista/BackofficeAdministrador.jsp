@@ -112,84 +112,83 @@
 
     <script>
       // === GRÁFICA 1: Tickets Vendidos (REAL) ===
-      const ctx1 = document.getElementById("chartTickets");
+        const ctx1 = document.getElementById("chartTickets");
 
-      const labels1 = [
-        <% 
-          List<utils.ChartPoint> graficaTickets = (List<utils.ChartPoint>) request.getAttribute("grafica1");
-          if (graficaTickets != null) {
-            for (utils.ChartPoint p : graficaTickets) { 
-        %>
-          "<%= p.getLabel() %>",
-        <% 
+          const labels1 = [
+          <%
+            List<utils.ChartPoint> graficaTickets = (List<utils.ChartPoint>) request.getAttribute("grafica1");
+            if (graficaTickets != null && !graficaTickets.isEmpty()) {
+                for (int i = 0; i < graficaTickets.size(); i++) {
+                    utils.ChartPoint p = graficaTickets.get(i);
+                    out.print("\"" + p.getLabel() + "\"");
+                    if (i < graficaTickets.size() - 1) out.print(", ");
+                }
             }
-          }
-        %>
-      ];
+          %>
+          ];
 
-      const data1 = [
-        <% 
-          if (graficaTickets != null) {
-            for (utils.ChartPoint p : graficaTickets) { 
-        %>
-          <%= p.getValue() %>,
-        <% 
+          const data1 = [
+          <%
+            if (graficaTickets != null && !graficaTickets.isEmpty()) {
+                for (int i = 0; i < graficaTickets.size(); i++) {
+                    utils.ChartPoint p = graficaTickets.get(i);
+                    out.print(p.getValue());
+                    if (i < graficaTickets.size() - 1) out.print(", ");
+                }
             }
-          }
-        %>
-      ];
+          %>
+          ];
 
-      new Chart(ctx1, {
-        type: "line",
-        data: {
-          labels: labels1,
-          datasets: [{
-            label: "Tickets Vendidos",
-            data: data1,
-            borderColor: "rgba(106,106,255,0.8)",
-            backgroundColor: "rgba(106,106,255,0.25)",
-            borderWidth: 2,
-            tension: 0.35
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { labels: { color: "white" } } },
-          scales: {
-            x: { ticks: { color: "white" } },
-            y: { ticks: { color: "white" } }
-          }
-        }
-      });
-
-
-      // === GRÁFICA 2: Tickets x Evento (REAL) ===
-      const ctx2 = document.getElementById("chartComisiones");
-
-      const labels2 = [
-        <% 
-          List<utils.ChartPoint> graficaComisiones = (List<utils.ChartPoint>) request.getAttribute("grafica2");
-          if (graficaComisiones != null) {
-            for (utils.ChartPoint p : graficaComisiones) { 
-        %>
-          "<%= p.getLabel() %>",
-        <% 
+          new Chart(ctx1, {
+            type: "line",
+            data: {
+              labels: labels1,
+              datasets: [{
+                label: "Tickets Vendidos",
+                data: data1,
+                borderColor: "rgba(106,106,255,0.8)",
+                backgroundColor: "rgba(106,106,255,0.25)",
+                borderWidth: 2,
+                tension: 0.35
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { labels: { color: "white" } } },
+              scales: {
+                x: { ticks: { color: "white" } },
+                y: { ticks: { color: "white" } }
+              }
             }
-          }
-        %>
-      ];
+          });
 
-      const data2 = [
-        <% 
-          if (graficaComisiones != null) {
-            for (utils.ChartPoint p : graficaComisiones) {
-        %>
-          <%= p.getValue() %>,
-        <% 
+          // === GRÁFICA 2: Tickets x Evento (REAL) ===
+          const ctx2 = document.getElementById("chartComisiones");
+
+          const labels2 = [
+          <%
+            List<utils.ChartPoint> graficaComisiones = (List<utils.ChartPoint>) request.getAttribute("grafica2");
+            if (graficaComisiones != null && !graficaComisiones.isEmpty()) {
+                for (int i = 0; i < graficaComisiones.size(); i++) {
+                    utils.ChartPoint p = graficaComisiones.get(i);
+                    out.print("\"" + p.getLabel() + "\"");
+                    if (i < graficaComisiones.size() - 1) out.print(", ");
+                }
             }
-          }
-        %>
-      ];
+          %>
+          ];
+
+          const data2 = [
+          <%
+            if (graficaComisiones != null && !graficaComisiones.isEmpty()) {
+                for (int i = 0; i < graficaComisiones.size(); i++) {
+                    utils.ChartPoint p = graficaComisiones.get(i);
+                    out.print(p.getValue());
+                    if (i < graficaComisiones.size() - 1) out.print(", ");
+                }
+            }
+          %>
+          ];
 
       new Chart(ctx2, {
         type: "bar",
