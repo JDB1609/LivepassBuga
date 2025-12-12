@@ -453,14 +453,7 @@
                href="TicketQR.jsp?tid=<%= t.getId() %>">
               Ver QR
             </a>
-            <a class="btn-outline text-xs"
-               href="../Control/ct_ticket_pdf.jsp?tid=<%= t.getId() %>">
-              Descargar PDF
-            </a>
-            <a class="btn-outline text-xs"
-               href="TransferirTicket.jsp?tid=<%= t.getId() %>">
-              Transferir
-            </a>
+            
           </div>
         </div>
       </article>

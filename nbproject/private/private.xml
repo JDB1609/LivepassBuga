@@ -49,6 +49,16 @@
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/MisTickets.jsp</file>
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/Checkout.jsp</file>
             <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/HomeCliente.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/Registro.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/dao/SoporteDAO.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/servlet/SoporteServlet.java</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/ListarTodosClientes.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/BackofficeAdministrador.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/LoginAdmin.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/CrearAdministrador.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/PerfilCliente.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/web/Vista/ListarTodosOrganizadores.jsp</file>
+            <file>file:/C:/Users/danie/OneDrive/Documentos/NetBeansProjects/LivepassBuga-main/src/java/dao/ReminderDAO.java</file>
         </group>
     </open-files>
 </project-private>

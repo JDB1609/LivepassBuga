@@ -224,6 +224,24 @@
         .lp-support-btn--pulse{
             animation:lp-support-pulse 2.2s infinite;
         }
+
+        /* Tarjetas extra: stats & testimonios */
+        .lp-stat-card{
+            border-radius:1.25rem;
+            background:radial-gradient(circle at top,#111827,#020617);
+            border:1px solid rgba(148,163,184,.4);
+            box-shadow:0 18px 45px rgba(0,0,0,.85);
+        }
+        .lp-testimonial{
+            border-radius:1.25rem;
+            background:#020617;
+            border:1px solid rgba(148,163,184,.35);
+        }
+        .lp-organizer-banner{
+            border-radius:1.5rem;
+            background:linear-gradient(135deg,#111827,#020617);
+            border:1px solid rgba(96,165,250,.45);
+        }
     </style>
 </head>
 
@@ -250,7 +268,6 @@
                 <li><a href="PaginaPrincipal.jsp" class="nav-link">Inicio</a></li>
                 <li><a href="ExplorarEventos.jsp" class="nav-link">Descubrir</a></li>
                 <li><a href="#" class="nav-link">Categorías</a></li>
-                <li><a href="Soporte.jsp" class="nav-link">Soporte</a></li>
             </ul>
 
             <!-- BOTONES SEGÚN SESIÓN -->
@@ -261,8 +278,7 @@
             </div>
             <% } else { %>
             <div class="hidden md:flex gap-3 items-center">
-                <span class="text-sm max-w-[140px] truncate"><%= userName %></span>
-                <a href="MisTickets.jsp" class="btn-solid">Mis Tickets</a>
+                <a href="HomeCliente.jsp" class="btn-solid">Mi Perfil</a>
             </div>
             <% } %>
 
@@ -385,7 +401,9 @@
                 <p class="mt-1 text-[11px] font-semibold text-[#5469D5]">$80.000 - $350.000</p>
             </div>
 
-            <button class="px-3 py-1.5 rounded-full bg-[#5469D5] text-[11px] font-semibold whitespace-nowrap">
+            <!-- BOTÓN QUE HACE SCROLL A POPULAR -->
+            <button id="btnScrollPopular"
+                    class="px-3 py-1.5 rounded-full bg-[#5469D5] text-[11px] font-semibold whitespace-nowrap">
                 Ver más
             </button>
         </div>
@@ -395,7 +413,8 @@
 <!-- ===========================
      CARRUSEL DE EVENTOS
 =========================== -->
-<section class="mt-10 md:mt-12 px-4 sm:px-6 md:px-10 max-w-6xl mx-auto overflow-visible">
+<section id="sectionPopular"
+         class="mt-10 md:mt-12 px-4 sm:px-6 md:px-10 max-w-6xl mx-auto overflow-visible">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
         <div>
             <h2 class="text-xl sm:text-2xl font-bold titulo">Popular esta semana</h2>
@@ -453,7 +472,7 @@
             %>
 
             <!-- Card evento -->
-            <article class="relative min-w-[240px] max-w-[260px] rounded-2xl bg-[#050816] border border-white/5 overflow-hidden shadow-xl flex-shrink-0 hover:-translate-y-2 hover:shadow-2xl transition-transform duration-300">
+            <article class="lp-card-event relative min-w-[240px] max-w-[260px] rounded-2xl bg-[#050816] border border-white/5 overflow-hidden shadow-xl flex-shrink-0 hover:-translate-y-2 hover:shadow-2xl transition-transform duration-300">
                 <div class="relative h-40">
                     <img src="<%= image %>"
                          alt="<%= ev.getImageAlt() != null ? ev.getImageAlt() : titulo %>"
@@ -778,6 +797,190 @@
 </section>
 
 <!-- ===========================
+     VIVE BUGA & LAGO CALIMA
+     (SECCIÓN EMOCIONAL)
+=========================== -->
+<section class="mt-12 md:mt-16 px-4 sm:px-6 md:px-10 max-w-6xl mx-auto">
+    <div class="grid lg:grid-cols-3 gap-8 items-center">
+        <!-- Texto principal -->
+        <div class="lg:col-span-2">
+            <p class="pill bg-[#111827] text-[#9ca3af] mb-2 text-[11px] sm:text-xs">
+                Destinos que se viven de noche y de día
+            </p>
+            <h2 class="section-title titulo text-xl sm:text-2xl mb-3">
+                Buga y el Lago Calima, dos escenarios perfectos para tu próximo recuerdo épico.
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 mb-4">
+                Desde conciertos en el centro histórico de Buga, hasta sunsets electrónicos a orillas
+                del Lago Calima, en LivePassBuga encuentras experiencias para todos los estilos:
+                planes con amigos, escapadas románticas o eventos empresariales que dejan huella.
+            </p>
+
+            <ul class="grid sm:grid-cols-2 gap-3 text-xs sm:text-sm text-slate-200">
+                <li class="flex gap-3">
+                    <span class="material-icons text-[#00E0C6] text-base">nightlife</span>
+                    <div>
+                        <p class="font-semibold">Noches que se cuentan, no que se olvidan</p>
+                        <p class="text-[11px] sm:text-xs text-slate-400">
+                            Festivales, DJs y bandas locales en spots seleccionados y con aforos controlados.
+                        </p>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="material-icons text-[#00E0C6] text-base">kayaking</span>
+                    <div>
+                        <p class="font-semibold">Días de aventura en el lago</p>
+                        <p class="text-[11px] sm:text-xs text-slate-400">
+                            Combina tus tickets con planes acuáticos, gastronomía y hospedaje alrededor del Calima.
+                        </p>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="material-icons text-[#00E0C6] text-base">groups</span>
+                    <div>
+                        <p class="font-semibold">Planes para grupos y empresas</p>
+                        <p class="text-[11px] sm:text-xs text-slate-400">
+                            Diseñamos experiencias a la medida: lanzamientos de marca, integraciones y eventos de fin de año.
+                        </p>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <span class="material-icons text-[#00E0C6] text-base">celebration</span>
+                    <div>
+                        <p class="font-semibold">Cero estrés, solo disfrutar</p>
+                        <p class="text-[11px] sm:text-xs text-slate-400">
+                            Compra online, recibe tu ticket al correo y entra directo con tu código QR.
+                        </p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Stats -->
+        <div class="space-y-4">
+            <div class="lp-stat-card p-4 sm:p-5">
+                <p class="text-[11px] uppercase tracking-[0.22em] text-sky-300/80 mb-1">
+                    Comunidad LivePassBuga
+                </p>
+                <p class="text-2xl font-extrabold titulo mb-1">
+                    12.500+ tickets vendidos
+                </p>
+                <p class="text-[11px] text-slate-300">
+                    Personas que ya vivieron conciertos, festivales, obras de teatro y experiencias en el lago.
+                </p>
+            </div>
+
+            <div class="lp-stat-card p-4 sm:p-5 flex items-center justify-between gap-3">
+                <div>
+                    <p class="text-[11px] uppercase tracking-[0.22em] text-sky-300/80 mb-1">
+                        Satisfacción
+                    </p>
+                    <p class="text-xl font-bold titulo mb-1">4.8 / 5</p>
+                    <p class="text-[11px] text-slate-300">
+                        Calificación promedio de los asistentes en encuestas post-evento.
+                    </p>
+                </div>
+                <span class="material-icons text-4xl text-[#00E0C6]">star_rate</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===========================
+     TESTIMONIOS
+=========================== -->
+<section class="mt-12 md:mt-16 px-4 sm:px-6 md:px-10 max-w-6xl mx-auto">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+        <div>
+            <p class="pill bg-[#111827] text-[#9ca3af] mb-2 text-[11px] sm:text-xs">Experiencias reales</p>
+            <h2 class="section-title titulo text-xl sm:text-2xl">Lo que dicen quienes ya fueron</h2>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+        <article class="lp-testimonial p-4 sm:p-5">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#5469D5] to-[#00E0C6] flex items-center justify-center text-xs font-bold">
+                    LG
+                </div>
+                <div>
+                    <p class="text-sm font-semibold">Laura Gómez</p>
+                    <p class="text-[11px] text-slate-400">Asistente · Neon Urban Night</p>
+                </div>
+            </div>
+            <p class="text-[11px] sm:text-xs text-slate-200 mb-2">
+                “Compré mis entradas en 2 minutos, llegué tarde al evento y aún así entré en segundos con el QR.
+                Todo súper claro y seguro.”
+            </p>
+        </article>
+
+        <article class="lp-testimonial p-4 sm:p-5">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#22C55E] flex items-center justify-center text-xs font-bold">
+                    MP
+                </div>
+                <div>
+                    <p class="text-sm font-semibold">Mauricio Pérez</p>
+                    <p class="text-[11px] text-slate-400">Organizador · Sunset Lake Festival</p>
+                </div>
+            </div>
+            <p class="text-[11px] sm:text-xs text-slate-200 mb-2">
+                “Pude ver las ventas en vivo, controlar el acceso por zonas y descargar listados de asistentes.
+                Todo el evento se sintió muy profesional.”
+            </p>
+        </article>
+
+        <article class="lp-testimonial p-4 sm:p-5">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#F97316] to-[#EC4899] flex items-center justify-center text-xs font-bold">
+                    RD
+                </div>
+                <div>
+                    <p class="text-sm font-semibold">Red de Emprendedores</p>
+                    <p class="text-[11px] text-slate-400">Evento corporativo</p>
+                </div>
+            </div>
+            <p class="text-[11px] sm:text-xs text-slate-200 mb-2">
+                “Usamos LivePassBuga para nuestro congreso empresarial en Buga y el proceso de registro fue
+                mucho más ágil que otros años.”
+            </p>
+        </article>
+    </div>
+</section>
+
+<!-- ===========================
+     BANNER ORGANIZADORES
+=========================== -->
+<section class="mt-12 md:mt-16 px-4 sm:px-6 md:px-10 max-w-6xl mx-auto mb-16">
+    <div class="lp-organizer-banner px-5 py-6 sm:px-8 sm:py-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+            <p class="text-[11px] uppercase tracking-[0.22em] text-sky-300/80 mb-1">
+                ¿Organizas eventos?
+            </p>
+            <h3 class="titulo text-lg sm:text-xl font-semibold mb-1">
+                Publica tus eventos en LivePassBuga y recibe pagos de forma segura.
+            </h3>
+            <p class="text-[11px] sm:text-xs text-slate-300 max-w-xl">
+                Crea tus zonas, controla el aforo, genera códigos QR para el acceso y mira en tiempo real
+                cuántas entradas se han vendido. Nosotros nos encargamos de la tecnología, tú de la experiencia.
+            </p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2">
+            <a href="RegistroOrganizador.jsp"
+               class="btn-solid px-5 py-2 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5">
+                <span class="material-icons text-sm">event_available</span>
+                <span>Quiero publicar un evento</span>
+            </a>
+            <a href="Soporte.jsp"
+               class="btn-outline px-5 py-2 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5">
+                <span class="material-icons text-sm">support_agent</span>
+                <span>Hablar con soporte</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ===========================
      BOTÓN FLOTANTE DE SOPORTE
 =========================== -->
 <button id="btnSoporte"
@@ -897,7 +1100,8 @@
       const nextM   = document.getElementById('arrowNextMobile');
 
       function scrollByCards(direction){
-          const card = track.querySelector('.relative.min-w-[240px]');
+          // Usamos la clase lp-card-event para evitar problemas con los nombres de clase de Tailwind
+          const card = track.querySelector('.lp-card-event');
           if (!card) return;
           const cardWidth = card.getBoundingClientRect().width + 16; // ancho + gap aprox
           track.scrollBy({
@@ -911,6 +1115,17 @@
       });
       [next, nextM].forEach(btn => {
           if (btn) btn.addEventListener('click', () => scrollByCards(1));
+      });
+  })();
+
+  // Scroll desde el botón "Ver más" del panel móvil hacia la sección Popular
+  (function(){
+      const btnMore  = document.getElementById('btnScrollPopular');
+      const popular  = document.getElementById('sectionPopular');
+      if (!btnMore || !popular) return;
+
+      btnMore.addEventListener('click', function(){
+          popular.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
   })();
 
