@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8  # Reducido porque no usamos GlassFish
     
-    # ⭐⭐ NUEVO: Servicio MySQL en contenedor ⭐⭐aa
+    # ⭐⭐ NUEVO: Servicio MySQL en contenedor ⭐⭐
     services:
       mysql:
         image: mysql:8.0
@@ -208,19 +208,19 @@ jobs:
           
           # Crear un test mínimo si no hay
           echo "--- Creando test mínimo de PasswordUtil ---"
-          cat > /tmp/PasswordUtilTest.java << 'TESTEOF'
-import utils.PasswordUtil;
-
-public class PasswordUtilTest {
-    public static void main(String[] args) {
-        System.out.println("🧪 Probando PasswordUtil...");
-        String hash = PasswordUtil.hash("test123");
-        boolean ok = PasswordUtil.verify("test123", hash);
-        System.out.println(ok ? "✅ PasswordUtil funciona" : "❌ PasswordUtil falló");
-        System.exit(ok ? 0 : 1);
-    }
-}
-TESTEOF
+          cat > /tmp/PasswordUtilTest.java <<'ENDTEST'
+        import utils.PasswordUtil;
+        
+        public class PasswordUtilTest {
+            public static void main(String[] args) {
+                System.out.println("🧪 Probando PasswordUtil...");
+                String hash = PasswordUtil.hash("test123");
+                boolean ok = PasswordUtil.verify("test123", hash);
+                System.out.println(ok ? "✅ PasswordUtil funciona" : "❌ PasswordUtil falló");
+                System.exit(ok ? 0 : 1);
+            }
+        }
+        ENDTEST
         
           javac -cp "$CLASSPATH" -d build/test/classes /tmp/PasswordUtilTest.java
           echo "✅ Test mínimo creado"
