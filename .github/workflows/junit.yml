@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Tests pueden tardar
     
     steps:
     - name: Checkout code
@@ -23,81 +24,89 @@ jobs:
     - name: Install Apache Ant
       run: sudo apt-get update && sudo apt-get install -y ant
     
-    # 1. INSTALAR GLASSFISH (compatible con Java 17)
-    - name: Install GlassFish Server 6.2.5
+    # SOLUCIÓN CRÍTICA: Obtener el JAR real de CopyLibs
+    - name: Fix CopyLibs dependency
       run: |
-        wget https://github.com/eclipse-ee4j/glassfish/releases/download/6.2.5/glassfish-6.2.5.zip
-        unzip glassfish-6.2.5.zip -d /opt
-        sudo chmod -R 755 /opt/glassfish6
-        echo "GLASSFISH_HOME=/opt/glassfish6" >> $GITHUB_ENV
+        mkdir -p libs
+        # Descargar el JAR REAL de una fuente confiable
+        wget -O libs/copylibstask.jar https://search.maven.org/remotecontent?filepath=org/netbeans/modules/org-netbeans-modules-java-j2seproject/RELEASE210/org-netbeans-modules-java-j2seproject-RELEASE210-copylibstask.jar
+        # Alternativa: Si tienes NetBeans instalado localmente, súbelo a tu repo
+        # echo "Si falla, sube manualmente el JAR desde tu NetBeans a libs/"
+    
+    - name: Install and configure GlassFish
+      run: |
+        # 1. Instalar GlassFish
+        wget -q https://github.com/eclipse-ee4j/glassfish/releases/download/6.2.5/glassfish-6.2.5.zip
+        unzip -q glassfish-6.2.5.zip -d /opt
+        export GLASSFISH_HOME=/opt/glassfish6
         
-    # 2. CONFIGURAR PROPIEDADES CRÍTICAS DE ANT
-    - name: Configure Ant properties for NetBeans project
-      run: |
-        # Crear directorio private si no existe
+        # 2. Configurar propiedades ANT
         mkdir -p nbproject/private
-        
-        # Archivo de propiedades ESSENCIAL para NetBeans Ant
         cat > nbproject/private/private.properties << EOF
-        # Configuración del servidor
         j2ee.server.home=/opt/glassfish6
         j2ee.server.type=GlassFish
-        j2ee.server.domain=domain1
-        
-        # Resolver problema de CopyLibs (poner ruta dummy)
-        libs.CopyLibs.classpath=libs/dummy.jar
-        
-        # Otras propiedades útiles
-        deploy.ant.properties.valid=true
-        user.properties.file=nbproject/private/private.properties
+        libs.CopyLibs.classpath=libs/copylibstask.jar
         EOF
         
-        # Crear estructura de libs para evitar errores
-        mkdir -p libs
-        touch libs/dummy.jar
+        # 3. Dar permisos de ejecución
+        chmod +x /opt/glassfish6/bin/asadmin
         
-    # 3. COMPILAR PRIMERO (para verificar configuración)
-    - name: Compile project
-      run: |
-        echo "=== Intentando compilación ==="
-        ant compile -Dj2ee.server.home=/opt/glassfish6 -Dlibs.CopyLibs.classpath=libs/dummy.jar
-      continue-on-error: true  # Continuar incluso si falla para ver logs completos
+        echo "GLASSFISH_HOME=/opt/glassfish6" >> $GITHUB_ENV
     
-    # 4. EJECUTAR TESTS (opción principal)
-    - name: Run tests with Ant
+    # PASO NUEVO: Compilar y desplegar la aplicación
+    - name: Build and deploy to GlassFish
       run: |
-        echo "=== Ejecutando tests ==="
-        # Opción 1: Ejecutar target test de NetBeans
-        ant test -Dj2ee.server.home=/opt/glassfish6 -Dlibs.CopyLibs.classpath=libs/dummy.jar
+        # Compilar el proyecto
+        ant compile -Dj2ee.server.home=/opt/glassfish6 -Dlibs.CopyLibs.classpath=libs/copylibstask.jar
         
-        # Si falla, intentar alternativa:
-        # ant run-test -Dj2ee.server.home=/opt/glassfish6 -Dlibs.CopyLibs.classpath=libs/dummy.jar
-      continue-on-error: true
+        # Crear el WAR
+        ant dist -Dj2ee.server.home=/opt/glassfish6 -Dlibs.CopyLibs.classpath=libs/copylibstask.jar
+        
+        # Iniciar GlassFish
+        /opt/glassfish6/bin/asadmin start-domain domain1
+        
+        # Desplegar la aplicación
+        /opt/glassfish6/bin/asadmin deploy --force=true dist/LivepassPagina.war
+        
+        # Esperar a que esté listo
+        sleep 15
+        echo "✅ Aplicación desplegada en http://localhost:8080/LivepassPagina/"
     
-    # 5. ALTERNATIVA: Ejecutar tests JUnit directamente (si hay clases de test)
-    - name: Try direct JUnit execution
-      if: failure()  # Solo si el paso anterior falló
+    # PASO NUEVO: Ejecutar tests CON el servidor corriendo
+    - name: Run HTTP integration tests
       run: |
-        echo "=== Intentando ejecución directa de JUnit ==="
-        # Buscar clases de test compiladas
-        find . -name "*Test*.class" 2>/dev/null || echo "No se encontraron clases Test"
+        echo "=== Ejecutando tests de integración HTTP ==="
         
-        # Buscar archivos JAR de JUnit
-        find . -name "*junit*.jar" 2>/dev/null || echo "No se encontró JUnit"
+        # Compilar los tests (si están separados)
+        # ant compile-test -Dj2ee.server.home=/opt/glassfish6 -Dlibs.CopyLibs.classpath=libs/copylibstask.jar
         
-        # Si hay tests, ejecutar con java directamente
-        # java -cp "build/classes:test/classes:lib/*" org.junit.runner.JUnitCore MiClaseTest
-      continue-on-error: true
+        # Ejecutar tests JUnit directamente (no usar 'ant test')
+        # Buscar todas las clases de test
+        find . -name "*Test.java" | while read test; do
+          echo "Encontrado test: $test"
+        done
+        
+        # Ejecutar la clase LoginTest específicamente
+        javac -cp "build/web/WEB-INF/classes:lib/*:build/test/classes:." LoginTest/LoginTest.java
+        
+        java -cp "build/web/WEB-INF/classes:lib/*:build/test/classes:." \
+             org.junit.runner.JUnitCore LoginTest.LoginTest
+        
+      continue-on-error: false
     
-    # 6. SUBIR RESULTADOS (si se generaron)
-    - name: Upload test results
+    - name: Stop GlassFish and collect logs
+      if: always()
+      run: |
+        /opt/glassfish6/bin/asadmin stop-domain domain1 || true
+        # Guardar logs del servidor
+        cp /opt/glassfish6/glassfish/domains/domain1/logs/server.log ./glassfish-server.log 2>/dev/null || echo "No logs found"
+    
+    - name: Upload test artifacts
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results
+        name: test-artifacts
         path: |
+          glassfish-server.log
           build/test/results/
-          test-results/
-          reports/
-          nbproject/private/
-        retention-days: 7
+          dist/
