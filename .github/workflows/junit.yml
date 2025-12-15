@@ -210,19 +210,19 @@ jobs:
           # Crear un test mínimo si no hay
           echo "--- Creando test mínimo de PasswordUtil ---"
           cat > /tmp/PasswordUtilTest.java <<'EOF'
-          import utils.PasswordUtil;
-          
-          public class PasswordUtilTest {
-              public static void main(String[] args) {
-                  System.out.println("🧪 Probando PasswordUtil...");
-                  String hash = PasswordUtil.hash("test123");
-                  boolean ok = PasswordUtil.verify("test123", hash);
-                  System.out.println(ok ? "✅ PasswordUtil funciona" : "❌ PasswordUtil falló");
-                  System.exit(ok ? 0 : 1);
-              }
-          }
-          EOF
-          
+import utils.PasswordUtil;
+
+public class PasswordUtilTest {
+    public static void main(String[] args) {
+        System.out.println("🧪 Probando PasswordUtil...");
+        String hash = PasswordUtil.hash("test123");
+        boolean ok = PasswordUtil.verify("test123", hash);
+        System.out.println(ok ? "✅ PasswordUtil funciona" : "❌ PasswordUtil falló");
+        System.exit(ok ? 0 : 1);
+    }
+}
+EOF
+        
           javac -cp "$CLASSPATH" -d build/test/classes /tmp/PasswordUtilTest.java
           echo "✅ Test mínimo creado"
         fi
