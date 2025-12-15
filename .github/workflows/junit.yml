@@ -209,7 +209,7 @@ jobs:
           
           # Crear un test mínimo si no hay
           echo "--- Creando test mínimo de PasswordUtil ---"
-          cat > /tmp/PasswordUtilTest.java <<'EOF'
+          cat > /tmp/PasswordUtilTest.java << 'EOF'
 import utils.PasswordUtil;
 
 public class PasswordUtilTest {
