@@ -1,4 +1,4 @@
-package LoginTest;  // ⬅️ Mover al paquete LoginTest
+package LoginTest;
 
 import org.junit.Test;
 import org.junit.Before;
@@ -6,7 +6,8 @@ import static org.junit.Assert.*;
 import java.sql.*;
 import java.util.Optional;
 import utils.User;
-import dao.UserDAO;  // ⬅️ Importar el DAO real
+import dao.UserDAO;
+import utils.PasswordUtil;
 
 public class UserDAOTest {
     
@@ -17,22 +18,21 @@ public class UserDAOTest {
     public void setUp() throws SQLException {
         System.out.println("🔄 Configurando entorno de prueba...");
         
-        // ⚠️ **CAMBIAR ESTO**: Usar la MISMA BD que tu UserDAO real
-        // UserDAO probablemente se conecta a "livepass", no "livepass_test"
+        // Conectar a la base de datos de TEST
         conexionTest = DriverManager.getConnection(
-            "jdbc:mysql://localhost:3306/livepass",  // ⬅️ BD REAL, no test
-            "root", ""
+            "jdbc:mysql://localhost:3306/livepass_test",  // Usar BD de test
+            "root", "root"
         );
         
-        // 1. Limpiar usuarios de prueba (CUIDADO: no borres usuarios reales)
+        // 1. Limpiar usuarios de prueba
         Statement stmt = conexionTest.createStatement();
         
         // Solo borrar usuarios con emails específicos de prueba
-        stmt.execute("DELETE FROM usuarios WHERE email IN ('luis_test@gmail.com', 'organizador_test@eventos.com')");
+        stmt.execute("DELETE FROM usuarios WHERE email LIKE '%_test@%'");
         
         // 2. Insertar datos de prueba CON HASH REAL
-        String hashLuis = utils.PasswordUtil.hash("12345678");
-        String hashOrg = utils.PasswordUtil.hash("evento2024");
+        String hashLuis = PasswordUtil.hash("12345678");
+        String hashOrg = PasswordUtil.hash("evento2024");
         
         // Usar emails CON "_test" para no interferir con datos reales
         stmt.execute("INSERT INTO usuarios (email, name, password_hash, role) VALUES " +
@@ -43,7 +43,7 @@ public class UserDAOTest {
         conexionTest.close();
         
         // 3. Crear UserDAO (usará su conexión INTERNA)
-        dao = new UserDAO();  // ⬅️ Esto usa la BD "livepass" por defecto
+        dao = new UserDAO();
     }
     
     @Test
@@ -127,6 +127,7 @@ public class UserDAOTest {
         } catch (Exception e) {
             System.err.println("\n❌ ERROR en pruebas: " + e.getMessage());
             e.printStackTrace();
+            System.exit(1);
         }
     }
 }
