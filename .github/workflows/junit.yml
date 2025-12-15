@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8  # Reducido porque no usamos GlassFish
     
-    # ⭐⭐ NUEVO: Servicio MySQL en contenedor ⭐⭐
+    # ⭐⭐ NUEVO: Servicio MySQL en contenedor ⭐⭐aa
     services:
       mysql:
         image: mysql:8.0
