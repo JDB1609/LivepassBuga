@@ -1,4 +1,4 @@
-name: Java CI with JUnit
+name: Java CI with Ant
 
 on:
   push:
@@ -14,25 +14,46 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
+    - name: List directory contents (debug)
+      run: ls -la
+      
     - name: Set up JDK
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
     
-    - name: Cache Maven dependencies
-      uses: actions/cache@v4  # ✅ Actualizado a v4
-      with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2
+    # Instalar Ant (no viene preinstalado en ubuntu-latest)
+    - name: Install Apache Ant
+      run: sudo apt-get update && sudo apt-get install -y ant
     
-    - name: Run tests with Maven
-      run: mvn test
+    - name: Verify Ant installation
+      run: ant -version
+    
+    # Resolver el problema de CopyLibs (del error anterior)
+    # 1. Opción: Crear el directorio libs manualmente
+    - name: Setup project structure for Ant
+      run: |
+        mkdir -p libs
+        echo "libs.CopyLibs.classpath=libs/org-netbeans-modules-java-j2seproject-copylibstask.jar" > nbproject/private/private.properties
+        
+    # 2. Opción: Usar la propiedad directamente en el comando ant
+    - name: Run tests with Ant
+      run: |
+        # Verificar si hay targets de test disponibles
+        ant -p
+        # Ejecutar los tests - ajusta el target según tu build.xml
+        ant test -Dlibs.CopyLibs.classpath=libs/org-netbeans-modules-java-j2seproject-copylibstask.jar
+      # Si falla, prueba con:
+      # ant run -Dlibs.CopyLibs.classpath=libs/org-netbeans-modules-java-j2seproject-copylibstask.jar
       
-    - name: Upload test results
+    - name: Upload test results (if applicable)
       if: always()
-      uses: actions/upload-artifact@v4  # ✅ Actualizado a v4
+      uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: target/surefire-reports/
+        # Ajusta esta ruta según dónde Ant genere los reportes
+        path: |
+          build/test/results/
+          test-results/
+          reports/
